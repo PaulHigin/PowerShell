@@ -475,11 +475,6 @@ namespace System.Management.Automation
             return Unix.IsHardLink(fileInfo);
         }
 
-        internal static bool NonWindowsIsSymLink(FileSystemInfo fileInfo)
-        {
-            return Unix.NativeMethods.IsSymLink(fileInfo.FullName);
-        }
-
         internal static string NonWindowsInternalGetTarget(string path)
         {
             return Unix.NativeMethods.FollowSymLink(path);
@@ -492,7 +487,7 @@ namespace System.Management.Automation
 
         internal static string NonWindowsInternalGetLinkType(FileSystemInfo fileInfo)
         {
-            if (NonWindowsIsSymLink(fileInfo))
+            if (fileInfo.Attributes.HasFlag(System.IO.FileAttributes.ReparsePoint))
             {
                 return "SymbolicLink";
             }
@@ -573,40 +568,6 @@ namespace System.Management.Automation
                 return (ErrorCategory)Unix.NativeMethods.GetErrorCategory(errno);
             }
 
-            private static string s_userName;
-            public static string UserName
-            {
-                get
-                {
-                    if (string.IsNullOrEmpty(s_userName))
-                    {
-                        s_userName = NativeMethods.GetUserName();
-                    }
-
-                    return s_userName ?? string.Empty;
-                }
-            }
-
-            public static string TemporaryDirectory
-            {
-                get
-                {
-                    // POSIX temporary directory environment variables
-                    string[] environmentVariables = { "TMPDIR", "TMP", "TEMP", "TEMPDIR" };
-                    string dir = string.Empty;
-                    foreach (string s in environmentVariables)
-                    {
-                        dir = System.Environment.GetEnvironmentVariable(s);
-                        if (!string.IsNullOrEmpty(dir))
-                        {
-                            return dir;
-                        }
-                    }
-
-                    return "/tmp";
-                }
-            }
-
             public static bool IsHardLink(ref IntPtr handle)
             {
                 // TODO:PSL implement using fstat to query inode refcount to see if it is a hard link
@@ -669,19 +630,11 @@ namespace System.Management.Automation
                 [DllImport(psLib, CharSet = CharSet.Ansi)]
                 internal static extern int GetErrorCategory(int errno);
 
-                [DllImport(psLib, CharSet = CharSet.Ansi, SetLastError = true)]
-                [return: MarshalAs(UnmanagedType.LPStr)]
-                internal static extern string GetUserName();
-
                 [DllImport(psLib)]
                 internal static extern int GetPPid(int pid);
 
                 [DllImport(psLib, CharSet = CharSet.Ansi, SetLastError = true)]
                 internal static extern int GetLinkCount([MarshalAs(UnmanagedType.LPStr)]string filePath, out int linkCount);
-
-                [DllImport(psLib, CharSet = CharSet.Ansi, SetLastError = true)]
-                [return: MarshalAs(UnmanagedType.I1)]
-                internal static extern bool IsSymLink([MarshalAs(UnmanagedType.LPStr)]string filePath);
 
                 [DllImport(psLib, CharSet = CharSet.Ansi, SetLastError = true)]
                 [return: MarshalAs(UnmanagedType.I1)]
