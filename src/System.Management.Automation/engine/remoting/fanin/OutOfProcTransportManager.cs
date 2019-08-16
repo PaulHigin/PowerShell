@@ -1444,6 +1444,7 @@ namespace System.Management.Automation.Remoting.Client
         private StreamReader _stdOutReader;
         private StreamReader _stdErrReader;
         private bool _connectionEstablished;
+        private Timer _connectTimer;
         private const string _threadName = "SSHTransport Reader Thread";
 
         #endregion
@@ -1500,6 +1501,34 @@ namespace System.Management.Automation.Remoting.Client
 
             // Create reader thread and send first PSRP message.
             StartReaderThread(_stdOutReader);
+
+            // Create timer to detect process termination before connection succeeds.
+            _connectTimer = new Timer(
+                (_) => {
+                    if (_connectionEstablished)
+                    {
+                        _connectTimer.Change(Timeout.Infinite, Timeout.Infinite);
+                        return;
+                    }
+
+                    var sshProcessRunning = false;
+                    try
+                    {
+                        var sshProcess = Process.GetProcessById(_sshProcessId);
+                        sshProcessRunning = sshProcess != null && sshProcess.Handle != IntPtr.Zero && !sshProcess.HasExited;
+                    }
+                    catch (ArgumentException) { }
+                    catch (InvalidOperationException) { }
+
+                    if (!sshProcessRunning)
+                    {
+                        _connectTimer.Change(Timeout.Infinite, Timeout.Infinite);
+                        HandleSSHError(new PSRemotingTransportException(RemotingErrorIdStrings.SSHTerminatedBeforeConnection));
+                    }
+                },
+                null,
+                1000,
+                1000);
         }
 
         internal override void CloseAsync()
@@ -1520,13 +1549,16 @@ namespace System.Management.Automation.Remoting.Client
         private void CloseConnection()
         {
             var stdInWriter = Interlocked.Exchange(ref _stdInWriter, null);
-            if (stdInWriter != null) { stdInWriter.Dispose(); }
+            stdInWriter?.Dispose();
 
             var stdOutReader = Interlocked.Exchange(ref _stdOutReader, null);
-            if (stdOutReader != null) { stdOutReader.Dispose(); }
+            stdOutReader?.Dispose();
 
             var stdErrReader = Interlocked.Exchange(ref _stdErrReader, null);
-            if (stdErrReader != null) { stdErrReader.Dispose(); }
+            stdErrReader?.Dispose();
+
+            var connectTimer = Interlocked.Exchange(ref _connectTimer, null);
+            connectTimer?.Dispose();
 
             // The CloseConnection() method can be called multiple times from multiple places.
             // Set the _sshProcessId to zero here so that we go through the work of finding

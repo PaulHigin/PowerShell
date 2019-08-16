@@ -1687,4 +1687,7 @@ All WinRM sessions connected to PowerShell session configurations, such as Micro
   <data name="EnterPSHostProcessCmdletDisabled" xml:space="preserve">
     <value>Enter-PSHostProcess cmdlet is disabled because an application control policy such as 'AppLocker' or 'Windows Defender Application Control' is in enforcement.</value>
   </data>
+  <data name="SSHTerminatedBeforeConnection" xml:space="preserve">
+    <value>The SSH process has ended before a PowerShell remoting connection could be established. This may be because the target endpoint is not set up correctly. Check the 'powershell' subsystem configured on the target machine.</value>
+  </data>
 </root>
