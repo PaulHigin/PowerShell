@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System.Collections;
@@ -415,9 +415,8 @@ namespace System.Management.Automation
         ///
         /// This will avoid one help file getting loaded again and again.
         /// </summary>
-        private Hashtable _helpFiles = new Hashtable();
+        private readonly Hashtable _helpFiles = new Hashtable();
 
         #endregion
     }
 }
-

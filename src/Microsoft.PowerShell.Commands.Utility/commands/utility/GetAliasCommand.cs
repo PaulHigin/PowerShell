@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -13,7 +13,7 @@ namespace Microsoft.PowerShell.Commands
     /// <summary>
     /// The implementation of the "get-alias" cmdlet.
     /// </summary>
-    [Cmdlet(VerbsCommon.Get, "Alias", DefaultParameterSetName = "Default", HelpUri = "https://go.microsoft.com/fwlink/?LinkID=113306")]
+    [Cmdlet(VerbsCommon.Get, "Alias", DefaultParameterSetName = "Default", HelpUri = "https://go.microsoft.com/fwlink/?LinkID=2096702")]
     [OutputType(typeof(AliasInfo))]
     public class GetAliasCommand : PSCmdlet
     {
@@ -181,10 +181,7 @@ namespace Microsoft.PowerShell.Commands
             }
 
             results.Sort(
-                delegate (AliasInfo left, AliasInfo right)
-                {
-                    return StringComparer.CurrentCultureIgnoreCase.Compare(left.Name, right.Name);
-                });
+                (AliasInfo left, AliasInfo right) => StringComparer.CurrentCultureIgnoreCase.Compare(left.Name, right.Name));
             foreach (AliasInfo alias in results)
             {
                 this.WriteObject(alias);

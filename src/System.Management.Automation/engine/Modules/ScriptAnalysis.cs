@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System.Collections;
@@ -158,6 +158,7 @@ namespace System.Management.Automation
         }
 
         private readonly bool _forCompletion;
+
         internal List<string> DiscoveredExports { get; set; }
         internal List<RequiredModuleInfo> DiscoveredModules { get; set; }
         internal Dictionary<string, FunctionDefinitionAst> DiscoveredFunctions { get; set; }
@@ -258,6 +259,8 @@ namespace System.Management.Automation
 
         public override AstVisitAction VisitSwitchStatement(SwitchStatementAst switchStatementAst) { return AstVisitAction.SkipChildren; }
 
+        public override AstVisitAction VisitTernaryExpression(TernaryExpressionAst ternaryExpressionAst) { return AstVisitAction.SkipChildren; }
+
         // Visit one the other variations:
         //  - Dotting scripts
         //  - Setting aliases
@@ -332,10 +335,7 @@ namespace System.Management.Automation
 
                 List<string> commandsToPostFilter = new List<string>();
 
-                Action<string> onEachCommand = importedCommandName =>
-                {
-                    commandsToPostFilter.Add(importedCommandName);
-                };
+                Action<string> onEachCommand = importedCommandName => commandsToPostFilter.Add(importedCommandName);
 
                 // Process any exports from the module that we determine from
                 // the -Function, -Cmdlet, or -Alias parameters
@@ -544,7 +544,7 @@ namespace System.Management.Automation
             return result;
         }
 
-        private static Dictionary<string, ParameterBindingInfo> s_parameterBindingInfoTable;
+        private static readonly Dictionary<string, ParameterBindingInfo> s_parameterBindingInfoTable;
 
         private class ParameterBindingInfo
         {

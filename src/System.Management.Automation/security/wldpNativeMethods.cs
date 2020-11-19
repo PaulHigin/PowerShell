@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 //
@@ -7,7 +7,6 @@
 #if !UNIX
 
 using System.Management.Automation.Internal;
-using Microsoft.Win32;
 using System.Runtime.InteropServices;
 using System.Diagnostics.CodeAnalysis;
 
@@ -48,21 +47,28 @@ namespace System.Management.Automation.Security
         /// <returns>An EnforcementMode that describes the system policy.</returns>
         public static SystemEnforcementMode GetSystemLockdownPolicy()
         {
-            if (s_allowDebugOverridePolicy || (s_systemLockdownPolicy == null))
+            if (s_systemLockdownPolicy == null)
             {
                 lock (s_systemLockdownPolicyLock)
                 {
-                    if (s_allowDebugOverridePolicy || (s_systemLockdownPolicy == null))
+                    if (s_systemLockdownPolicy == null)
                     {
-                        s_systemLockdownPolicy = GetLockdownPolicy(null, null);
+                        s_systemLockdownPolicy = GetLockdownPolicy(path: null, handle: null);
                     }
+                }
+            }
+            else if (s_allowDebugOverridePolicy)
+            {
+                lock (s_systemLockdownPolicyLock)
+                {
+                    s_systemLockdownPolicy = GetDebugLockdownPolicy(path: null);
                 }
             }
 
             return s_systemLockdownPolicy.Value;
         }
 
-        private static object s_systemLockdownPolicyLock = new Object();
+        private static object s_systemLockdownPolicyLock = new object();
         private static SystemEnforcementMode? s_systemLockdownPolicy = null;
         private static bool s_allowDebugOverridePolicy = false;
 
@@ -113,9 +119,8 @@ namespace System.Management.Automation.Security
         private static SystemEnforcementMode GetWldpPolicy(string path, SafeHandle handle)
         {
             // If the WLDP assembly is missing (such as windows 7 or down OS), return default/None to skip WLDP validation
-            if (s_hadMissingWldpAssembly || !IO.File.Exists(IO.Path.Combine(Environment.SystemDirectory, "wldp.dll")))
+            if (s_hadMissingWldpAssembly)
             {
-                s_hadMissingWldpAssembly = true;
                 return s_cachedWldpSystemPolicy.GetValueOrDefault(SystemEnforcementMode.None);
             }
 
@@ -177,6 +182,7 @@ namespace System.Management.Automation.Security
 
         private const string AppLockerTestFileName = "__PSScriptPolicyTest_";
         private const string AppLockerTestFileContents = "# PowerShell test file to determine AppLocker lockdown mode ";
+
         private static SystemEnforcementMode GetAppLockerPolicy(string path, SafeHandle handle)
         {
             SaferPolicy result = SaferPolicy.Disallowed;
@@ -357,34 +363,7 @@ namespace System.Management.Automation.Security
                     return SystemEnforcementMode.None;
                 }
 
-                using (RegistryKey hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Default))
-                {
-                    using (RegistryKey wldpPolicy = hklm.OpenSubKey("SYSTEM\\CurrentControlSet\\Control\\CI\\TRSData"))
-                    {
-                        if (wldpPolicy != null)
-                        {
-                            object exclusionPathsKey = wldpPolicy.GetValue("TestPath");
-
-                            wldpPolicy.Close();
-                            hklm.Close();
-
-                            if (exclusionPathsKey != null)
-                            {
-                                string[] exclusionPaths = (string[])exclusionPathsKey;
-                                foreach (string exclusionPath in exclusionPaths)
-                                {
-                                    if (path.IndexOf(exclusionPath, StringComparison.OrdinalIgnoreCase) >= 0)
-                                    {
-                                        return SystemEnforcementMode.None;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // No explicit debug allowance for the file, so return the system policy if there
-                // is one.
+                // No explicit debug allowance for the file, so return the system policy if there is one.
                 return s_systemLockdownPolicy.GetValueOrDefault(SystemEnforcementMode.None);
             }
 
@@ -565,6 +544,7 @@ namespace System.Management.Automation.Security
             /// pHostInformation: PWLDP_HOST_INFORMATION->_WLDP_HOST_INFORMATION*
             /// pdwLockdownState: PDWORD->DWORD*
             /// dwFlags: DWORD->unsigned int
+            [DefaultDllImportSearchPathsAttribute(DllImportSearchPath.System32)]
             [DllImportAttribute("wldp.dll", EntryPoint = "WldpGetLockdownPolicy")]
             internal static extern int WldpGetLockdownPolicy(ref WLDP_HOST_INFORMATION pHostInformation, ref uint pdwLockdownState, uint dwFlags);
 
@@ -573,6 +553,7 @@ namespace System.Management.Automation.Security
             /// pHostInformation: PWLDP_HOST_INFORMATION->_WLDP_HOST_INFORMATION*
             /// ptIsApproved: PBOOL->BOOL*
             /// dwFlags: DWORD->unsigned int
+            [DefaultDllImportSearchPathsAttribute(DllImportSearchPath.System32)]
             [DllImportAttribute("wldp.dll", EntryPoint = "WldpIsClassInApprovedList")]
             internal static extern int WldpIsClassInApprovedList(ref Guid rclsid, ref WLDP_HOST_INFORMATION pHostInformation, ref int ptIsApproved, uint dwFlags);
 

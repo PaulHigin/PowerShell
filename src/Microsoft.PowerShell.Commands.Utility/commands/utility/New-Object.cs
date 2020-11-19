@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 #region Using directives
@@ -10,10 +10,14 @@ using System.Globalization;
 using System.Management.Automation;
 using System.Management.Automation.Internal;
 using System.Management.Automation.Language;
+#if !UNIX
 using System.Management.Automation.Security;
+#endif
 using System.Reflection;
 using System.Runtime.InteropServices;
+#if !UNIX
 using System.Threading;
+#endif
 
 using Dbg = System.Management.Automation.Diagnostics;
 
@@ -22,7 +26,7 @@ using Dbg = System.Management.Automation.Diagnostics;
 namespace Microsoft.PowerShell.Commands
 {
     /// <summary>Create a new .net object</summary>
-    [Cmdlet(VerbsCommon.New, "Object", DefaultParameterSetName = netSetName, HelpUri = "https://go.microsoft.com/fwlink/?LinkID=113355")]
+    [Cmdlet(VerbsCommon.New, "Object", DefaultParameterSetName = netSetName, HelpUri = "https://go.microsoft.com/fwlink/?LinkID=2096620")]
     public sealed class NewObjectCommand : PSCmdlet
     {
         #region parameters
@@ -133,7 +137,7 @@ namespace Microsoft.PowerShell.Commands
             Type type = null;
             PSArgumentException mshArgE = null;
 
-            if (string.Compare(ParameterSetName, netSetName, StringComparison.Ordinal) == 0)
+            if (string.Equals(ParameterSetName, netSetName, StringComparison.Ordinal))
             {
                 object _newObject = null;
                 try
@@ -168,7 +172,7 @@ namespace Microsoft.PowerShell.Commands
                                 targetObject: null));
                     }
 
-                    throw e;
+                    throw;
                 }
 
                 Diagnostics.Assert(type != null, "LanguagePrimitives.TryConvertTo failed but returned true");
@@ -207,7 +211,7 @@ namespace Microsoft.PowerShell.Commands
                     ConstructorInfo ci = type.GetConstructor(Type.EmptyTypes);
                     if (ci != null && ci.IsPublic)
                     {
-                        _newObject = CallConstructor(type, new ConstructorInfo[] { ci }, new object[] { });
+                        _newObject = CallConstructor(type, new ConstructorInfo[] { ci }, Array.Empty<object>());
                         if (_newObject != null && Property != null)
                         {
                             // The method invocation is disabled for "Hashtable to Object conversion" (Win8:649519), but we need to keep it enabled for New-Object for compatibility to PSv2
@@ -395,7 +399,6 @@ namespace Microsoft.PowerShell.Commands
             return result;
         }
 
-#if !CORECLR
         private class ComCreateInfo
         {
             public object objectCreated;
@@ -405,7 +408,7 @@ namespace Microsoft.PowerShell.Commands
 
         private ComCreateInfo createInfo;
 
-        private void STAComCreateThreadProc(Object createstruct)
+        private void STAComCreateThreadProc(object createstruct)
         {
             ComCreateInfo info = (ComCreateInfo)createstruct;
             try
@@ -435,7 +438,6 @@ namespace Microsoft.PowerShell.Commands
                 info.success = false;
             }
         }
-#endif
 
         private object CreateComObject()
         {
@@ -459,13 +461,6 @@ namespace Microsoft.PowerShell.Commands
                 // Check Error Code to see if Error is because of Com apartment Mismatch.
                 if (e.HResult == RPC_E_CHANGED_MODE)
                 {
-#if CORECLR
-                    ThrowTerminatingError(
-                        new ErrorRecord(
-                            new COMException(StringUtil.Format(NewObjectStrings.ApartmentNotSupported, e.Message), e),
-                            "NoCOMClassIdentified",
-                            ErrorCategory.ResourceUnavailable, null));
-#else
                     createInfo = new ComCreateInfo();
 
                     Thread thread = new Thread(new ParameterizedThreadStart(STAComCreateThreadProc));
@@ -474,7 +469,7 @@ namespace Microsoft.PowerShell.Commands
 
                     thread.Join();
 
-                    if (createInfo.success == true)
+                    if (createInfo.success)
                     {
                         return createInfo.objectCreated;
                     }
@@ -482,7 +477,6 @@ namespace Microsoft.PowerShell.Commands
                     ThrowTerminatingError(
                              new ErrorRecord(createInfo.e, "NoCOMClassIdentified",
                                                     ErrorCategory.ResourceUnavailable, null));
-#endif
                 }
                 else
                 {

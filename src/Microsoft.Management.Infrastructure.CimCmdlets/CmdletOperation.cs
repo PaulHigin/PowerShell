@@ -1,10 +1,9 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 #region Using directives
-using System.Management.Automation;
 using System;
-using System.Globalization;
+using System.Management.Automation;
 
 #endregion
 
@@ -188,7 +187,7 @@ namespace Microsoft.Management.Infrastructure.CimCmdlets
 
         #region private methods
 
-        private CimRemoveCimInstance removeCimInstance;
+        private readonly CimRemoveCimInstance removeCimInstance;
 
         private const string cimRemoveCimInstanceParameterName = @"cimRemoveCimInstance";
 
@@ -234,8 +233,8 @@ namespace Microsoft.Management.Infrastructure.CimCmdlets
                 CimSetCimInstanceContext setContext = context as CimSetCimInstanceContext;
                 if (setContext != null)
                 {
-                    if ((string.Compare(setContext.ParameterSetName, CimBaseCommand.QueryComputerSet, StringComparison.OrdinalIgnoreCase) == 0) ||
-                        (string.Compare(setContext.ParameterSetName, CimBaseCommand.QuerySessionSet, StringComparison.OrdinalIgnoreCase) == 0))
+                    if (string.Equals(setContext.ParameterSetName, CimBaseCommand.QueryComputerSet, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(setContext.ParameterSetName, CimBaseCommand.QuerySessionSet, StringComparison.OrdinalIgnoreCase))
                     {
                         this.setCimInstance.SetCimInstance(sendToPipeline as CimInstance, setContext, this);
                         return;
@@ -268,7 +267,7 @@ namespace Microsoft.Management.Infrastructure.CimCmdlets
 
         #region private methods
 
-        private CimSetCimInstance setCimInstance;
+        private readonly CimSetCimInstance setCimInstance;
 
         private const string theCimSetCimInstanceParameterName = @"theCimSetCimInstance";
 
@@ -331,7 +330,7 @@ namespace Microsoft.Management.Infrastructure.CimCmdlets
 
         #region private methods
 
-        private CimInvokeCimMethod cimInvokeCimMethod;
+        private readonly CimInvokeCimMethod cimInvokeCimMethod;
 
         private const string theCimInvokeCimMethodParameterName = @"theCimInvokeCimMethod";
 
@@ -392,7 +391,7 @@ namespace Microsoft.Management.Infrastructure.CimCmdlets
 
         #region private methods
 
-        private CimNewSession cimNewSession;
+        private readonly CimNewSession cimNewSession;
 
         private const string theCimNewSessionParameterName = @"theCimNewSession";
 

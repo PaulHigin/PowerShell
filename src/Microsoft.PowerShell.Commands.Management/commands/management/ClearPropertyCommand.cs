@@ -1,10 +1,8 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System.Collections.ObjectModel;
 using System.Management.Automation;
-
-using Dbg = System.Management.Automation;
 
 namespace Microsoft.PowerShell.Commands
 {
@@ -12,7 +10,7 @@ namespace Microsoft.PowerShell.Commands
     /// A command to clear the value of a property of an item at a specified path.
     /// </summary>
     [Cmdlet(VerbsCommon.Clear, "ItemProperty", DefaultParameterSetName = "Path", SupportsShouldProcess = true, SupportsTransactions = true,
-        HelpUri = "https://go.microsoft.com/fwlink/?LinkID=113284")]
+        HelpUri = "https://go.microsoft.com/fwlink/?LinkID=2096903")]
     public class ClearItemPropertyCommand : PassThroughItemPropertyCommandBase
     {
         #region Parameters

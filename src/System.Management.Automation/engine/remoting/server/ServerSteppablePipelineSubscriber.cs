@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using Dbg = System.Management.Automation.Diagnostics;
@@ -29,7 +29,7 @@ namespace System.Management.Automation
     {
         #region Private data
 
-        private object _syncObject = new object();
+        private readonly object _syncObject = new object();
         private bool _initialized = false;
         private PSLocalEventManager _eventManager;
         private PSEventSubscriber _startSubscriber;

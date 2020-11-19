@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -9,7 +9,6 @@ using System.Diagnostics.Eventing.Reader;
 using System.Globalization;
 using System.IO;
 using System.Management.Automation;
-using System.Reflection;
 using System.Resources;
 using System.Xml;
 
@@ -19,7 +18,7 @@ namespace Microsoft.PowerShell.Commands
     /// Class that implements the New-WinEvent cmdlet.
     /// This cmdlet writes a new Etw event using the provider specified in parameter.
     ///
-    [Cmdlet(VerbsCommon.New, "WinEvent", HelpUri = "https://go.microsoft.com/fwlink/?LinkID=217469")]
+    [Cmdlet(VerbsCommon.New, "WinEvent", HelpUri = "https://go.microsoft.com/fwlink/?LinkID=2096808")]
     public sealed class NewWinEventCommand : PSCmdlet
     {
         private ProviderMetadata _providerMetadata;
@@ -27,7 +26,8 @@ namespace Microsoft.PowerShell.Commands
 
         private const string TemplateTag = "template";
         private const string DataTag = "data";
-        private ResourceManager _resourceMgr = Microsoft.PowerShell.Commands.Diagnostics.Common.CommonUtilities.GetResourceManager();
+
+        private readonly ResourceManager _resourceMgr = Microsoft.PowerShell.Commands.Diagnostics.Common.CommonUtilities.GetResourceManager();
 
         /// <summary>
         /// ProviderName.

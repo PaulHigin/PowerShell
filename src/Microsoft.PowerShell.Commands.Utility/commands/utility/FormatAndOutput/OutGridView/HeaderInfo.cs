@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -9,7 +9,7 @@ namespace Microsoft.PowerShell.Commands
 {
     internal class HeaderInfo
     {
-        private List<ColumnInfo> _columns = new List<ColumnInfo>();
+        private readonly List<ColumnInfo> _columns = new List<ColumnInfo>();
 
         internal void AddColumn(ColumnInfo col)
         {

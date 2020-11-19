@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -87,7 +87,6 @@ namespace Microsoft.PowerShell
         /// If the converting the user input to the prompt field type fails unless it is caused by
         ///     OverflowException or FormatException
         /// </exception>
-
         public override
         Dictionary<string, PSObject>
         Prompt(string caption, string message, Collection<FieldDescription> descriptions)
@@ -97,12 +96,12 @@ namespace Microsoft.PowerShell
 
             if (descriptions == null)
             {
-                throw PSTraceSource.NewArgumentNullException("descriptions");
+                throw PSTraceSource.NewArgumentNullException(nameof(descriptions));
             }
 
             if (descriptions.Count < 1)
             {
-                throw PSTraceSource.NewArgumentException("descriptions",
+                throw PSTraceSource.NewArgumentException(nameof(descriptions),
                     ConsoleHostUserInterfaceStrings.PromptEmptyDescriptionsErrorTemplate, "descriptions");
             }
 
@@ -139,7 +138,7 @@ namespace Microsoft.PowerShell
                     descIndex++;
                     if (desc == null)
                     {
-                        throw PSTraceSource.NewArgumentException("descriptions",
+                        throw PSTraceSource.NewArgumentException(nameof(descriptions),
                             ConsoleHostUserInterfaceStrings.NullErrorTemplate,
                             string.Format(CultureInfo.InvariantCulture, "descriptions[{0}]", descIndex));
                     }
@@ -182,7 +181,7 @@ namespace Microsoft.PowerShell
                         // assigned to an array
 
                         // if the field is an array, the element type can be found; else, use Object
-                        Type elementType = typeof(Object);
+                        Type elementType = typeof(object);
                         if (fieldType.IsArray)
                         {
                             elementType = fieldType.GetElementType();
@@ -202,7 +201,7 @@ namespace Microsoft.PowerShell
 
                         StringBuilder fieldPromptList = new StringBuilder(fieldPrompt);
                         // fieldPromptList = fieldPrompt + "[i] :"
-                        fieldPromptList.Append("[");
+                        fieldPromptList.Append('[');
 
                         while (true)
                         {
@@ -475,7 +474,6 @@ namespace Microsoft.PowerShell
         /// <param name="desc"></param>
         /// <param name="inputDone"></param>
         /// <returns></returns>
-
         private string PromptCommandMode(string input, FieldDescription desc, out bool inputDone)
         {
             Dbg.Assert(input != null && input.StartsWith(PromptCommandPrefix, StringComparison.OrdinalIgnoreCase),
@@ -516,13 +514,13 @@ namespace Microsoft.PowerShell
 
             if (command.Length == 2)
             {
-                if (0 == string.Compare(command, "\"\"", StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(command, "\"\"", StringComparison.OrdinalIgnoreCase))
                 {
                     return string.Empty;
                 }
             }
 
-            if (0 == string.Compare(command, "$null", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(command, "$null", StringComparison.OrdinalIgnoreCase))
             {
                 return null;
             }
@@ -544,4 +542,3 @@ namespace Microsoft.PowerShell
         private const string PromptCommandPrefix = "!";
     }
 }   // namespace
-

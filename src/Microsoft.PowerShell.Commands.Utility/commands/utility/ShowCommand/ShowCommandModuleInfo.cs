@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -21,7 +21,7 @@ namespace Microsoft.PowerShell.Commands.ShowCommandExtension
         {
             if (other == null)
             {
-                throw new ArgumentNullException("other");
+                throw new ArgumentNullException(nameof(other));
             }
 
             this.Name = other.Name;
@@ -37,7 +37,7 @@ namespace Microsoft.PowerShell.Commands.ShowCommandExtension
         {
             if (other == null)
             {
-                throw new ArgumentNullException("other");
+                throw new ArgumentNullException(nameof(other));
             }
 
             this.Name = other.Members["Name"].Value as string;
@@ -46,6 +46,6 @@ namespace Microsoft.PowerShell.Commands.ShowCommandExtension
         /// <summary>
         /// Gets the name of this module.
         /// </summary>
-        public string Name { get; private set; }
+        public string Name { get; }
     }
 }

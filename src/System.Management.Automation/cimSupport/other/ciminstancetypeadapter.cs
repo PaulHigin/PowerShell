@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -105,7 +105,7 @@ namespace Microsoft.PowerShell.Cim
         {
             if (propertyName == null)
             {
-                throw new PSArgumentNullException("propertyName");
+                throw new PSArgumentNullException(nameof(propertyName));
             }
 
             // baseObject should never be null
@@ -199,7 +199,7 @@ namespace Microsoft.PowerShell.Cim
         {
             if (adaptedProperty == null)
             {
-                throw new ArgumentNullException("adaptedProperty");
+                throw new ArgumentNullException(nameof(adaptedProperty));
             }
 
             CimProperty cimProperty = adaptedProperty.Tag as CimProperty;
@@ -213,7 +213,7 @@ namespace Microsoft.PowerShell.Cim
                 return ToStringCodeMethods.Type(typeof(string));
             }
 
-            throw new ArgumentNullException("adaptedProperty");
+            throw new ArgumentNullException(nameof(adaptedProperty));
         }
 
         /// <summary>
@@ -224,7 +224,7 @@ namespace Microsoft.PowerShell.Cim
         {
             if (adaptedProperty == null)
             {
-                throw new ArgumentNullException("adaptedProperty");
+                throw new ArgumentNullException(nameof(adaptedProperty));
             }
 
             CimProperty cimProperty = adaptedProperty.Tag as CimProperty;
@@ -239,7 +239,7 @@ namespace Microsoft.PowerShell.Cim
                 return cimInstance.GetCimSessionComputerName();
             }
 
-            throw new ArgumentNullException("adaptedProperty");
+            throw new ArgumentNullException(nameof(adaptedProperty));
         }
 
         private void AddTypeNameHierarchy(IList<string> typeNamesWithNamespace, IList<string> typeNamesWithoutNamespace, string namespaceName, string className)
@@ -285,10 +285,9 @@ namespace Microsoft.PowerShell.Cim
         /// <returns></returns>
         public override Collection<string> GetTypeNameHierarchy(object baseObject)
         {
-            var cimInstance = baseObject as CimInstance;
-            if (cimInstance == null)
+            if (!(baseObject is CimInstance cimInstance))
             {
-                throw new ArgumentNullException("baseObject");
+                throw new ArgumentNullException(nameof(baseObject));
             }
 
             var typeNamesWithNamespace = new List<string>();
@@ -362,8 +361,7 @@ namespace Microsoft.PowerShell.Cim
                 return false;
             }
 
-            CimProperty cimProperty = adaptedProperty.Tag as CimProperty;
-            if (cimProperty == null)
+            if (!(adaptedProperty.Tag is CimProperty cimProperty))
             {
                 return false;
             }
@@ -381,7 +379,7 @@ namespace Microsoft.PowerShell.Cim
         {
             if (adaptedProperty == null)
             {
-                throw new ArgumentNullException("adaptedProperty");
+                throw new ArgumentNullException(nameof(adaptedProperty));
             }
 
             if (!IsSettable(adaptedProperty))

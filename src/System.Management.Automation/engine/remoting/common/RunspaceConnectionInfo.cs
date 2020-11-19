@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
@@ -232,6 +232,7 @@ namespace System.Management.Automation.Runspaces
         }
 
         private int _openTimeout = DefaultOpenTimeout;
+
         internal const int DefaultOpenTimeout = 3 * 60 * 1000; // 3 minutes
         internal const int DefaultTimeout = -1;
         internal const int InfiniteTimeout = 0;
@@ -280,7 +281,7 @@ namespace System.Management.Automation.Runspaces
         {
             if (options == null)
             {
-                throw new ArgumentNullException("options");
+                throw new ArgumentNullException(nameof(options));
             }
 
             if (options.Culture != null)
@@ -688,9 +689,9 @@ namespace System.Management.Automation.Runspaces
                     default:
                         string message = PSRemotingErrorInvariants.FormatResourceString(RemotingErrorIdStrings.ProxyAmbiguousAuthentication,
                             value,
-                            AuthenticationMechanism.Basic.ToString(),
-                            AuthenticationMechanism.Negotiate.ToString(),
-                            AuthenticationMechanism.Digest.ToString());
+                            nameof(AuthenticationMechanism.Basic),
+                            nameof(AuthenticationMechanism.Negotiate),
+                            nameof(AuthenticationMechanism.Digest));
                         throw new ArgumentException(message);
                 }
             }
@@ -974,7 +975,7 @@ namespace System.Management.Automation.Runspaces
         {
             if (options == null)
             {
-                throw new ArgumentNullException("options");
+                throw new ArgumentNullException(nameof(options));
             }
 
             if ((options.ProxyAccessType == ProxyAccessType.None) && (options.ProxyCredential != null))
@@ -1123,8 +1124,7 @@ namespace System.Management.Automation.Runspaces
         internal static T ExtractPropertyAsWsManConnectionInfo<T>(RunspaceConnectionInfo rsCI,
             string property, T defaultValue)
         {
-            WSManConnectionInfo wsCI = rsCI as WSManConnectionInfo;
-            if (wsCI == null)
+            if (!(rsCI is WSManConnectionInfo wsCI))
             {
                 return defaultValue;
             }
@@ -1348,7 +1348,7 @@ namespace System.Management.Automation.Runspaces
 
 #if NOT_APPLY_PORT_DCR
         private static string DEFAULT_SCHEME = HTTP_SCHEME;
-        internal static string DEFAULT_SSL_SCHEME = HTTPS_SCHEME;
+        internal static readonly string DEFAULT_SSL_SCHEME = HTTPS_SCHEME;
         private static string DEFAULT_APP_NAME = "wsman";
         /// <summary>
         /// See below for explanation.
@@ -1439,7 +1439,7 @@ namespace System.Management.Automation.Runspaces
                 return (EnableNetworkAccess &&                                                              // Interactive token requested
                         (Credential == null &&                                                              // No credential provided
                          (ComputerName.Equals(DefaultComputerName, StringComparison.OrdinalIgnoreCase) ||   // Localhost computer name
-                          ComputerName.IndexOf('.') == -1)));                                               // Not FQDN computer name
+                          !ComputerName.Contains('.'))));                                                    // Not FQDN computer name
             }
         }
 
@@ -1515,6 +1515,11 @@ namespace System.Management.Automation.Runspaces
         public bool RunAs32 { get; set; }
 
         /// <summary>
+        /// Gets or sets an initial working directory for the powershell background process.
+        /// </summary>
+        public string WorkingDirectory { get; set; }
+
+        /// <summary>
         /// Powershell version to execute the job in.
         /// </summary>
         public Version PSVersion { get; set; }
@@ -1565,7 +1570,7 @@ namespace System.Management.Automation.Runspaces
                 if (value != AuthenticationMechanism.Default)
                 {
                     throw PSTraceSource.NewInvalidOperationException(RemotingErrorIdStrings.IPCSupportsOnlyDefaultAuth,
-                        value.ToString(), AuthenticationMechanism.Default.ToString());
+                        value.ToString(), nameof(AuthenticationMechanism.Default));
                 }
 
                 _authMechanism = value;
@@ -1590,6 +1595,7 @@ namespace System.Management.Automation.Runspaces
             NewProcessConnectionInfo result = new NewProcessConnectionInfo(_credential);
             result.AuthenticationMechanism = this.AuthenticationMechanism;
             result.InitializationScript = this.InitializationScript;
+            result.WorkingDirectory = this.WorkingDirectory;
             result.RunAs32 = this.RunAs32;
             result.PSVersion = this.PSVersion;
             result.Process = Process;
@@ -1639,6 +1645,7 @@ namespace System.Management.Automation.Runspaces
         private PSCredential _credential;
         private AuthenticationMechanism _authMechanism;
         private string _appDomainName = string.Empty;
+
         private const int _defaultOpenTimeout = 60000;      /* 60 seconds. */
 
         #endregion
@@ -1795,7 +1802,7 @@ namespace System.Management.Automation.Runspaces
                 if (value != Runspaces.AuthenticationMechanism.Default)
                 {
                     throw PSTraceSource.NewInvalidOperationException(RemotingErrorIdStrings.IPCSupportsOnlyDefaultAuth,
-                        value.ToString(), AuthenticationMechanism.Default.ToString());
+                        value.ToString(), nameof(AuthenticationMechanism.Default));
                 }
 
                 _authMechanism = value;
@@ -1906,12 +1913,12 @@ namespace System.Management.Automation.Runspaces
             string computerName,
             string keyFilePath)
         {
-            if (computerName == null) { throw new PSArgumentNullException("computerName"); }
+            if (computerName == null) { throw new PSArgumentNullException(nameof(computerName)); }
 
             this.UserName = userName;
             this.ComputerName = computerName;
             this.KeyFilePath = keyFilePath;
-            this.Port = DefaultPort;
+            this.Port = 0;
             this.Subsystem = DefaultSubsystem;
         }
 
@@ -1930,7 +1937,7 @@ namespace System.Management.Automation.Runspaces
         {
             ValidatePortInRange(port);
 
-            this.Port = (port != 0) ? port : DefaultPort;
+            this.Port = port;
         }
 
         /// <summary>
@@ -1950,7 +1957,7 @@ namespace System.Management.Automation.Runspaces
         {
             ValidatePortInRange(port);
 
-            this.Port = (port != 0) ? port : DefaultPort;
+            this.Port = port;
             this.Subsystem = (string.IsNullOrEmpty(subsystem)) ? DefaultSubsystem : subsystem;
         }
 
@@ -2057,24 +2064,27 @@ namespace System.Management.Automation.Runspaces
                 }
             }
 
-            // Extract an optional domain name if provided.
-            string domainName = null;
-            string userName = this.UserName ?? GetCurrentUserName();
-#if !UNIX
-            var parts = userName.Split(Utils.Separators.Backslash);
-            if (parts.Length == 2)
-            {
-                domainName = parts[0];
-                userName = parts[1];
-            }
-#endif
+            // Create a local ssh process (client) that conects to a remote sshd process (server) using a 'powershell' subsystem.
+            //
+            // Local ssh invoked as:
+            //   windows:
+            //     ssh.exe [-i identity_file] [-l login_name] [-p port] -s <destination> <command>
+            //   linux|macos:
+            //     ssh [-i identity_file] [-l login_name] [-p port] -s <destination> <command>
+            // where <command> is interpreted as the subsystem due to the -s flag.
+            //
+            // Remote sshd configured for PowerShell Remoting Protocol (PSRP) over Secure Shell Protocol (SSH)
+            // by adding one of the following Subsystem directives to sshd_config on the remote machine:
+            //   windows:
+            //     Subsystem powershell C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -SSHServerMode -NoLogo -NoProfile
+            //     Subsystem powershell C:\Program Files\PowerShell\6\pwsh.exe -SSHServerMode -NoLogo -NoProfile
+            //   linux|macos:
+            //     Subsystem powershell /usr/local/bin/pwsh -SSHServerMode -NoLogo -NoProfile
 
-            // Create client ssh process that hosts powershell as a subsystem and is configured
-            // to be in server mode for PSRP over SSHD:
-            //   powershell -sshs -NoLogo -NoProfile
-            //   See sshd_configuration file, subsystems section and it will have this entry:
-            //     Subsystem       powershell C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -sshs -NoLogo -NoProfile
-            string arguments;
+            System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo(filePath);
+
+            // pass "-i identity_file" command line argument to ssh if KeyFilePath is set
+            // if KeyFilePath is not set, then ssh will use IdentityFile / IdentityAgent from ssh_config if defined else none by default
             if (!string.IsNullOrEmpty(this.KeyFilePath))
             {
                 if (!System.IO.File.Exists(this.KeyFilePath))
@@ -2083,20 +2093,38 @@ namespace System.Management.Automation.Runspaces
                         StringUtil.Format(RemotingErrorIdStrings.KeyFileNotFound, this.KeyFilePath));
                 }
 
-                arguments = (string.IsNullOrEmpty(domainName)) ?
-                    string.Format(CultureInfo.InvariantCulture, @"-i ""{0}"" {1}@{2} -p {3} -s {4}", this.KeyFilePath, userName, this.ComputerName, this.Port, this.Subsystem) :
-                    string.Format(CultureInfo.InvariantCulture, @"-i ""{0}"" -l {1}@{2} {3} -p {4} -s {5}", this.KeyFilePath, userName, domainName, this.ComputerName, this.Port, this.Subsystem);
-            }
-            else
-            {
-                arguments = (string.IsNullOrEmpty(domainName)) ?
-                    string.Format(CultureInfo.InvariantCulture, @"{0}@{1} -p {2} -s {3}", userName, this.ComputerName, this.Port, this.Subsystem) :
-                    string.Format(CultureInfo.InvariantCulture, @"-l {0}@{1} {2} -p {3} -s {4}", userName, domainName, this.ComputerName, this.Port, this.Subsystem);
+                startInfo.ArgumentList.Add(string.Format(CultureInfo.InvariantCulture, @"-i ""{0}""", this.KeyFilePath));
             }
 
-            System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo(
-                filePath,
-                arguments);
+            // pass "-l login_name" commmand line argument to ssh if UserName is set
+            // if UserName is not set, then ssh will use User from ssh_config if defined else the environment user by default
+            if (!string.IsNullOrEmpty(this.UserName))
+            {
+                var parts = this.UserName.Split(Utils.Separators.Backslash);
+                if (parts.Length == 2)
+                {
+                    // convert DOMAIN\user to user@DOMAIN
+                    var domainName = parts[0];
+                    var userName = parts[1];
+                    startInfo.ArgumentList.Add(string.Format(CultureInfo.InvariantCulture, @"-l {0}@{1}", userName, domainName));
+                }
+                else
+                {
+                    startInfo.ArgumentList.Add(string.Format(CultureInfo.InvariantCulture, @"-l {0}", this.UserName));
+                }
+            }
+
+            // pass "-p port" command line argument to ssh if Port is set
+            // if Port is not set, then ssh will use Port from ssh_config if defined else 22 by default
+            if (this.Port != 0)
+            {
+                startInfo.ArgumentList.Add(string.Format(CultureInfo.InvariantCulture, @"-p {0}", this.Port));
+            }
+
+            // pass "-s destination command" command line arguments to ssh where command is the subsystem to invoke on the destination
+            // note that ssh expects IPv6 addresses to not be enclosed in square brackets so trim them if present
+            startInfo.ArgumentList.Add(string.Format(CultureInfo.InvariantCulture, @"-s {0} {1}", this.ComputerName.TrimStart('[').TrimEnd(']'), this.Subsystem));
+
             startInfo.WorkingDirectory = System.IO.Path.GetDirectoryName(filePath);
             startInfo.CreateNoWindow = true;
             startInfo.UseShellExecute = false;
@@ -2106,25 +2134,7 @@ namespace System.Management.Automation.Runspaces
 
         #endregion
 
-        #region Private Methods
-
-        private string GetCurrentUserName()
-        {
-#if UNIX
-            return System.Environment.GetEnvironmentVariable("USER") ?? string.Empty;
-#else
-            return System.Security.Principal.WindowsIdentity.GetCurrent().Name;
-#endif
-        }
-
-        #endregion
-
         #region Constants
-
-        /// <summary>
-        /// Default value for port.
-        /// </summary>
-        private const int DefaultPort = 22;
 
         /// <summary>
         /// Default value for subsystem.
@@ -2276,7 +2286,7 @@ namespace System.Management.Automation.Runspaces
             var argvList = new List<string>();
             argvList.Add(psi.FileName);
 
-            var argsToParse = psi.Arguments.Trim();
+            var argsToParse = String.Join(" ", psi.ArgumentList).Trim();
             var argsLength = argsToParse.Length;
             for (int i=0; i<argsLength; )
             {
@@ -2443,7 +2453,7 @@ namespace System.Management.Automation.Runspaces
 
             if ((ex != null) ||
                 (sshProcess == null) ||
-                (sshProcess.HasExited == true))
+                (sshProcess.HasExited))
             {
                 throw new InvalidOperationException(
                     StringUtil.Format(RemotingErrorIdStrings.CannotStartSSHClient, (ex != null) ? ex.Message : string.Empty),
@@ -2539,7 +2549,12 @@ namespace System.Management.Automation.Runspaces
 
             try
             {
-                var cmdLine = string.Format(CultureInfo.InvariantCulture, @"""{0}"" {1}", startInfo.FileName, startInfo.Arguments);
+                // Create process start command line with filename and argument list.
+                var cmdLine = string.Format(
+                    CultureInfo.InvariantCulture,
+                    @"""{0}"" {1}",
+                    startInfo.FileName,
+                    string.Join(' ', startInfo.ArgumentList));
 
                 lpStartupInfo.hStdInput = new SafeFileHandle(stdInPipeClient.DangerousGetHandle(), false);
                 lpStartupInfo.hStdOutput = new SafeFileHandle(stdOutPipeClient.DangerousGetHandle(), false);
@@ -2647,7 +2662,7 @@ namespace System.Management.Automation.Runspaces
                 byte[] securityDescBuffer = new byte[securityDesc.BinaryLength];
                 securityDesc.GetBinaryForm(securityDescBuffer, 0);
                 securityDescHandle = GCHandle.Alloc(securityDescBuffer, GCHandleType.Pinned);
-                securityAttributes = NamedPipeNative.GetSecurityAttributes(securityDescHandle.Value, true); ;
+                securityAttributes = NamedPipeNative.GetSecurityAttributes(securityDescHandle.Value, true);
             }
 
             // Create async named pipe.
@@ -2690,6 +2705,7 @@ namespace System.Management.Automation.Runspaces
 
         private AuthenticationMechanism _authMechanism;
         private PSCredential _credential;
+
         private const int _defaultOpenTimeout = 20000; /* 20 seconds. */
 
         #endregion
@@ -2726,7 +2742,7 @@ namespace System.Management.Automation.Runspaces
                 if (value != AuthenticationMechanism.Default)
                 {
                     throw PSTraceSource.NewInvalidOperationException(RemotingErrorIdStrings.IPCSupportsOnlyDefaultAuth,
-                        value.ToString(), AuthenticationMechanism.Default.ToString());
+                        value.ToString(), nameof(AuthenticationMechanism.Default));
                 }
 
                 _authMechanism = value;
@@ -2819,6 +2835,7 @@ namespace System.Management.Automation.Runspaces
 
         private AuthenticationMechanism _authMechanism;
         private PSCredential _credential;
+
         private const int _defaultOpenTimeout = 20000; /* 20 seconds. */
 
         #endregion
@@ -2850,7 +2867,7 @@ namespace System.Management.Automation.Runspaces
                 if (value != AuthenticationMechanism.Default)
                 {
                     throw PSTraceSource.NewInvalidOperationException(RemotingErrorIdStrings.IPCSupportsOnlyDefaultAuth,
-                        value.ToString(), AuthenticationMechanism.Default.ToString());
+                        value.ToString(), nameof(AuthenticationMechanism.Default));
                 }
 
                 _authMechanism = value;
@@ -3425,7 +3442,26 @@ namespace System.Management.Automation.Runspaces
                     //
                     if (RuntimeId == Guid.Empty)
                     {
-                        ContainerObRoot = (string)computeSystemPropertiesType.GetProperty("ObRoot").GetValue(computeSystemPropertiesHandle);
+                        // Since Hyper-V changed this from a property to a field, we can optimize for newest Windows to see if it's a field,
+                        // otherwise we fall back to old code to be compatible with older versions of Windows
+                        var obRootFieldInfo = computeSystemPropertiesType.GetField("ObRoot");
+                        if (obRootFieldInfo != null)
+                        {
+                            ContainerObRoot = obRootFieldInfo.GetValue(computeSystemPropertiesHandle) as string;
+                        }
+                        else
+                        {
+                            var obRootPropertyInfo = computeSystemPropertiesType.GetProperty("ObRoot");
+                            if (obRootPropertyInfo != null)
+                            {
+                                ContainerObRoot = obRootPropertyInfo.GetValue(computeSystemPropertiesHandle) as string;
+                            }
+                        }
+
+                        if (ContainerObRoot == null)
+                        {
+                            throw new PSInvalidOperationException(RemotingErrorIdStrings.CannotGetHostInteropTypes);
+                        }
                     }
                 }
             }
@@ -3459,16 +3495,6 @@ namespace System.Management.Automation.Runspaces
         /// </summary>
         private void RunOnMTAThread(ThreadStart threadProc)
         {
-            //
-            // By default, non-OneCore PowerShell is launched with ApartmentState being STA.
-            // In this case, we need to create a separate thread, set its ApartmentState to MTA,
-            // and do the work.
-            //
-            // For OneCore PowerShell, its ApartmentState is always MTA.
-            //
-#if CORECLR
-            threadProc();
-#else
             if (Thread.CurrentThread.GetApartmentState() == ApartmentState.MTA)
             {
                 threadProc();
@@ -3481,7 +3507,6 @@ namespace System.Management.Automation.Runspaces
                 executionThread.Start();
                 executionThread.Join();
             }
-#endif
         }
 
         /// <summary>

@@ -1,12 +1,9 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Management.Automation;
-
-using Dbg = System.Management.Automation.Diagnostics;
 
 namespace Microsoft.PowerShell.Commands
 {
@@ -75,7 +72,7 @@ namespace Microsoft.PowerShell.Commands
                         patternToMatch,
                         WildcardOptions.IgnoreCase);
 
-                Dictionary<String, PSTraceSource> traceCatalog = PSTraceSource.TraceCatalog;
+                Dictionary<string, PSTraceSource> traceCatalog = PSTraceSource.TraceCatalog;
 
                 foreach (PSTraceSource source in traceCatalog.Values)
                 {

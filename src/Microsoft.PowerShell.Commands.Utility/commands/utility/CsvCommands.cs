@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -10,8 +10,6 @@ using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Text;
-
-using Dbg = System.Management.Automation.Diagnostics;
 
 #pragma warning disable 1634, 1691 // Stops compiler from warning about unknown warnings
 
@@ -43,7 +41,6 @@ namespace Microsoft.PowerShell.Commands
         /// Abstract Property - Input Object which is written in Csv format.
         /// Derived as Different Attributes.In ConvertTo-CSV, This is a positional parameter. Export-CSV not a Positional behaviour.
         /// </summary>
-
         public abstract PSObject InputObject { get; set; }
 
         /// <summary>
@@ -138,7 +135,7 @@ namespace Microsoft.PowerShell.Commands
     /// <summary>
     /// Implementation for the Export-Csv command.
     /// </summary>
-    [Cmdlet(VerbsData.Export, "Csv", SupportsShouldProcess = true, DefaultParameterSetName = "Delimiter", HelpUri = "https://go.microsoft.com/fwlink/?LinkID=113299")]
+    [Cmdlet(VerbsData.Export, "Csv", SupportsShouldProcess = true, DefaultParameterSetName = "Delimiter", HelpUri = "https://go.microsoft.com/fwlink/?LinkID=2096608")]
     public sealed class ExportCsvCommand : BaseCsvWritingCommand, IDisposable
     {
         #region Command Line Parameters
@@ -217,7 +214,21 @@ namespace Microsoft.PowerShell.Commands
         [ArgumentToEncodingTransformationAttribute]
         [ArgumentEncodingCompletionsAttribute]
         [ValidateNotNullOrEmpty]
-        public Encoding Encoding { get; set; } = ClrFacade.GetDefaultEncoding();
+        public Encoding Encoding
+        {
+            get
+            {
+                return _encoding;
+            }
+
+            set
+            {
+                EncodingConversion.WarnIfObsolete(this, value);
+                _encoding = value;
+            }
+        }
+
+        private Encoding _encoding = ClrFacade.GetDefaultEncoding();
 
         /// <summary>
         /// Gets or sets property that sets append parameter.
@@ -491,7 +502,7 @@ namespace Microsoft.PowerShell.Commands
         /// </summary>
         public void Dispose()
         {
-            if (_disposed == false)
+            if (!_disposed)
             {
                 CleanUp();
             }
@@ -509,7 +520,7 @@ namespace Microsoft.PowerShell.Commands
     /// <summary>
     /// Implements Import-Csv command.
     /// </summary>
-    [Cmdlet(VerbsData.Import, "Csv", DefaultParameterSetName = "DelimiterPath", HelpUri = "https://go.microsoft.com/fwlink/?LinkID=113341")]
+    [Cmdlet(VerbsData.Import, "Csv", DefaultParameterSetName = "DelimiterPath", HelpUri = "https://go.microsoft.com/fwlink/?LinkID=2097020")]
     public sealed class ImportCsvCommand : PSCmdlet
     {
         #region Command Line Parameters
@@ -592,7 +603,21 @@ namespace Microsoft.PowerShell.Commands
         [ArgumentToEncodingTransformationAttribute]
         [ArgumentEncodingCompletionsAttribute]
         [ValidateNotNullOrEmpty]
-        public Encoding Encoding { get; set; } = ClrFacade.GetDefaultEncoding();
+        public Encoding Encoding
+        {
+            get
+            {
+                return _encoding;
+            }
+
+            set
+            {
+                EncodingConversion.WarnIfObsolete(this, value);
+                _encoding = value;
+            }
+        }
+
+        private Encoding _encoding = ClrFacade.GetDefaultEncoding();
 
         /// <summary>
         /// Avoid writing out duplicate warning messages when there are one or more unspecified names.
@@ -655,8 +680,8 @@ namespace Microsoft.PowerShell.Commands
     /// <summary>
     /// Implements ConvertTo-Csv command.
     /// </summary>
-    [Cmdlet(VerbsData.ConvertTo, "Csv", DefaultParameterSetName = "DelimiterPath",
-        HelpUri = "https://go.microsoft.com/fwlink/?LinkID=135203", RemotingCapability = RemotingCapability.None)]
+    [Cmdlet(VerbsData.ConvertTo, "Csv", DefaultParameterSetName = "Delimiter",
+        HelpUri = "https://go.microsoft.com/fwlink/?LinkID=2096832", RemotingCapability = RemotingCapability.None)]
     [OutputType(typeof(string))]
     public sealed class ConvertToCsvCommand : BaseCsvWritingCommand
     {
@@ -744,8 +769,8 @@ namespace Microsoft.PowerShell.Commands
     /// <summary>
     /// Implements ConvertFrom-Csv command.
     /// </summary>
-    [Cmdlet(VerbsData.ConvertFrom, "Csv", DefaultParameterSetName = "DelimiterPath",
-        HelpUri = "https://go.microsoft.com/fwlink/?LinkID=135201", RemotingCapability = RemotingCapability.None)]
+    [Cmdlet(VerbsData.ConvertFrom, "Csv", DefaultParameterSetName = "Delimiter",
+        HelpUri = "https://go.microsoft.com/fwlink/?LinkID=2096830", RemotingCapability = RemotingCapability.None)]
     public sealed class ConvertFromCsvCommand : PSCmdlet
     {
         #region Command Line Parameters
@@ -753,7 +778,7 @@ namespace Microsoft.PowerShell.Commands
         /// <summary>
         /// Property that sets delimiter.
         /// </summary>
-        [Parameter(Position = 1, ParameterSetName = "DelimiterPath")]
+        [Parameter(Position = 1, ParameterSetName = "Delimiter")]
         [ValidateNotNull]
         [ValidateNotNullOrEmpty]
         public char Delimiter { get; set; }
@@ -761,8 +786,7 @@ namespace Microsoft.PowerShell.Commands
         ///<summary>
         ///Culture switch for csv conversion
         ///</summary>
-        [Parameter(ParameterSetName = "CulturePath", Mandatory = true)]
-        [Parameter(ParameterSetName = "CultureLiteralPath", Mandatory = true)]
+        [Parameter(ParameterSetName = "UseCulture", Mandatory = true)]
         [ValidateNotNull]
         [ValidateNotNullOrEmpty]
         public SwitchParameter UseCulture { get; set; }
@@ -853,10 +877,10 @@ namespace Microsoft.PowerShell.Commands
     /// </summary>
     internal class ExportCsvHelper : IDisposable
     {
-        private char _delimiter;
-        readonly private BaseCsvWritingCommand.QuoteKind _quoteKind;
-        readonly private HashSet<string> _quoteFields;
-        readonly private StringBuilder _outputString;
+        private readonly char _delimiter;
+        private readonly BaseCsvWritingCommand.QuoteKind _quoteKind;
+        private readonly HashSet<string> _quoteFields;
+        private readonly StringBuilder _outputString;
 
         /// <summary>
         /// Create ExportCsvHelper instance.
@@ -1014,7 +1038,7 @@ namespace Microsoft.PowerShell.Commands
                                 AppendStringWithEscapeAlways(_outputString, value);
                                 break;
                             case BaseCsvWritingCommand.QuoteKind.AsNeeded:
-                                if (value.Contains(_delimiter))
+                                if (value != null && value.Contains(_delimiter))
                                 {
                                     AppendStringWithEscapeAlways(_outputString, value);
                                 }
@@ -1145,7 +1169,7 @@ namespace Microsoft.PowerShell.Commands
         /// </summary>
         public void Dispose()
         {
-            if (_disposed == false)
+            if (!_disposed)
             {
                 GC.SuppressFinalize(this);
             }
@@ -1739,7 +1763,7 @@ namespace Microsoft.PowerShell.Commands
                 case "UseCulture":
                 case "CulturePath":
                 case "CultureLiteralPath":
-                    if (useCulture == true)
+                    if (useCulture)
                     {
                         // ListSeparator is apparently always a character even though the property returns a string, checked via:
                         // [CultureInfo]::GetCultures("AllCultures") | % { ([CultureInfo]($_.Name)).TextInfo.ListSeparator } | ? Length -ne 1

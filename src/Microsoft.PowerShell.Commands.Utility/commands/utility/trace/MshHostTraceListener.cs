@@ -1,10 +1,9 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
 using System.Management.Automation;
 using System.Management.Automation.Internal.Host;
-using System.Security.Permissions;
 using System.Text;
 
 namespace Microsoft.PowerShell.Commands
@@ -31,7 +30,7 @@ namespace Microsoft.PowerShell.Commands
         {
             if (cmdlet == null)
             {
-                throw new PSArgumentNullException("cmdlet");
+                throw new PSArgumentNullException(nameof(cmdlet));
             }
 
             Diagnostics.Assert(
@@ -52,7 +51,6 @@ namespace Microsoft.PowerShell.Commands
         /// <param name="disposing">
         /// True if the TraceListener is being disposed, false otherwise.
         /// </param>
-        [SecurityPermission(SecurityAction.LinkDemand)]
         protected override void Dispose(bool disposing)
         {
             try
@@ -76,7 +74,6 @@ namespace Microsoft.PowerShell.Commands
         /// <param name="output">
         /// The trace output to be written.
         /// </param>
-        [SecurityPermission(SecurityAction.LinkDemand)]
         public override void Write(string output)
         {
             try
@@ -90,7 +87,7 @@ namespace Microsoft.PowerShell.Commands
             }
         }
 
-        private StringBuilder _cachedWrite = new StringBuilder();
+        private readonly StringBuilder _cachedWrite = new StringBuilder();
 
         /// <summary>
         /// Sends the given output string to the host for processing.
@@ -98,7 +95,6 @@ namespace Microsoft.PowerShell.Commands
         /// <param name="output">
         /// The trace output to be written.
         /// </param>
-        [SecurityPermission(SecurityAction.LinkDemand)]
         public override void WriteLine(string output)
         {
             try
@@ -119,6 +115,6 @@ namespace Microsoft.PowerShell.Commands
         /// <summary>
         /// The host interface to write the debug line to.
         /// </summary>
-        private InternalHostUserInterface _ui;
+        private readonly InternalHostUserInterface _ui;
     }
 }

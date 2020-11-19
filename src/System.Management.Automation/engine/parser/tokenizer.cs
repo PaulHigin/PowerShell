@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System.Collections;
@@ -153,7 +153,7 @@ namespace System.Management.Automation.Language
         {
             if (string.IsNullOrEmpty(name))
             {
-                PSArgumentNullException e = PSTraceSource.NewArgumentNullException("name");
+                PSArgumentNullException e = PSTraceSource.NewArgumentNullException(nameof(name));
                 throw e;
             }
 
@@ -167,7 +167,7 @@ namespace System.Management.Automation.Language
         {
             if (keywordToAdd == null)
             {
-                PSArgumentNullException e = PSTraceSource.NewArgumentNullException("keywordToAdd");
+                PSArgumentNullException e = PSTraceSource.NewArgumentNullException(nameof(keywordToAdd));
                 throw e;
             }
 
@@ -191,7 +191,7 @@ namespace System.Management.Automation.Language
         {
             if (string.IsNullOrEmpty(name))
             {
-                PSArgumentNullException e = PSTraceSource.NewArgumentNullException("name");
+                PSArgumentNullException e = PSTraceSource.NewArgumentNullException(nameof(name));
                 throw e;
             }
 
@@ -207,7 +207,7 @@ namespace System.Management.Automation.Language
         {
             if (string.IsNullOrEmpty(name))
             {
-                PSArgumentNullException e = PSTraceSource.NewArgumentNullException("name");
+                PSArgumentNullException e = PSTraceSource.NewArgumentNullException(nameof(name));
                 throw e;
             }
 
@@ -377,7 +377,7 @@ namespace System.Management.Automation.Language
                     (ConfigurationType != ConfigurationType.Meta && !keyword.IsMetaDSCResource()));
         }
 
-        private static Dictionary<string, List<string>> s_excludeKeywords = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase)
+        private static readonly Dictionary<string, List<string>> s_excludeKeywords = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase)
         {
             {@"Node", new List<string> {@"Node"}},
         };
@@ -391,7 +391,7 @@ namespace System.Management.Automation.Language
         internal static IEnumerable<DynamicKeyword> GetAllowedKeywords(this DynamicKeyword keyword, IEnumerable<DynamicKeyword> allowedKeywords)
         {
             string keywordName = keyword.Keyword;
-            if (string.Compare(keywordName, @"Node", StringComparison.OrdinalIgnoreCase) == 0)
+            if (string.Equals(keywordName, @"Node", StringComparison.OrdinalIgnoreCase))
             {
                 List<string> excludeKeywords;
                 if (s_excludeKeywords.TryGetValue(keywordName, out excludeKeywords))
@@ -543,7 +543,7 @@ namespace System.Management.Automation.Language
         Decimal = 0x10,
 
         /// <summary>
-        /// Indicates 'I' suffix for BigInteger (arbitrarily large integer) numerals.
+        /// Indicates 'N' suffix for BigInteger (arbitrarily large integer) numerals.
         /// </summary>
         BigInteger = 0x20
     }
@@ -590,6 +590,7 @@ namespace System.Management.Automation.Language
     {
         private static readonly Dictionary<string, TokenKind> s_keywordTable
             = new Dictionary<string, TokenKind>(StringComparer.OrdinalIgnoreCase);
+
         private static readonly Dictionary<string, TokenKind> s_operatorTable
             = new Dictionary<string, TokenKind>(StringComparer.OrdinalIgnoreCase);
 
@@ -628,7 +629,7 @@ namespace System.Management.Automation.Language
         /*A*/    "configuration",           "public",           "private",          "static",                     /*A*/
         /*B*/    "interface",               "enum",             "namespace",        "module",                     /*B*/
         /*C*/    "type",                    "assembly",         "command",          "hidden",                     /*C*/
-        /*D*/    "base",                                                                                          /*D*/
+        /*D*/    "base",                    "default",                                                            /*D*/
         };
 
         private static readonly TokenKind[] s_keywordTokenKind = new TokenKind[] {
@@ -644,7 +645,7 @@ namespace System.Management.Automation.Language
         /*A*/    TokenKind.Configuration,   TokenKind.Public,   TokenKind.Private,  TokenKind.Static,             /*A*/
         /*B*/    TokenKind.Interface,       TokenKind.Enum,     TokenKind.Namespace,TokenKind.Module,             /*B*/
         /*C*/    TokenKind.Type,            TokenKind.Assembly, TokenKind.Command,  TokenKind.Hidden,             /*C*/
-        /*D*/    TokenKind.Base,                                                                                  /*D*/
+        /*D*/    TokenKind.Base,            TokenKind.Default,                                                    /*D*/
         };
 
         internal static readonly string[] _operatorText = new string[] {
@@ -721,6 +722,16 @@ namespace System.Management.Automation.Language
 
         internal TokenizerMode Mode { get; set; }
         internal bool AllowSignedNumbers { get; set; }
+
+        // TODO: use auto-properties when making 'ternary operator' an official feature.
+        private bool _forceEndNumberOnTernaryOpChars;
+
+        internal bool ForceEndNumberOnTernaryOpChars
+        {
+            get { return _forceEndNumberOnTernaryOpChars; }
+            set { _forceEndNumberOnTernaryOpChars = value; }
+        }
+
         internal bool WantSimpleName { get; set; }
         internal bool InWorkflowContext { get; set; }
         internal List<Token> TokenList { get; set; }
@@ -876,9 +887,9 @@ namespace System.Management.Automation.Language
 
         internal void SkipNewlines(bool skipSemis)
         {
-            // We normally don't create any tokens in a Skip method, but the
-            // V2 tokenizer api returns newline, semi-colon, and line
-            // continuation tokens so we create them as they are encountered.
+        // We normally don't create any tokens in a Skip method, but the
+        // V2 tokenizer api returns newline, semi-colon, and line
+        // continuation tokens so we create them as they are encountered.
         again:
             char c = GetChar();
             switch (c)
@@ -1342,15 +1353,15 @@ namespace System.Management.Automation.Language
             return true;
         }
 
-        internal bool IsPipeContinuance(IScriptExtent extent)
+        internal bool IsPipeContinuation(IScriptExtent extent)
         {
-            return extent.EndOffset < _script.Length && PipeContinuanceAfterExtent(extent);
+            // If the first non-whitespace & non-comment (regular or block) character following a newline is a pipe, we have
+            // pipe continuation.
+            return extent.EndOffset < _script.Length && ContinuationAfterExtent(extent, continuationChar: '|');
         }
 
-        private bool PipeContinuanceAfterExtent(IScriptExtent extent)
+        private bool ContinuationAfterExtent(IScriptExtent extent, char continuationChar)
         {
-            // If the first non-comment (regular or block) character following a newline is a pipe, we have
-            // pipe continuance.
             bool lastNonWhitespaceIsNewline = true;
             int i = extent.EndOffset;
 
@@ -1372,7 +1383,7 @@ namespace System.Management.Automation.Language
                 {
                     if (lastNonWhitespaceIsNewline)
                     {
-                        // blank or whitespace-only lines are not allowed in automatic line continuance
+                        // blank or whitespace-only lines are not allowed in automatic line continuation
                         return false;
                     }
 
@@ -1384,7 +1395,7 @@ namespace System.Management.Automation.Language
                 {
                     if (lastNonWhitespaceIsNewline)
                     {
-                        // blank or whitespace-only lines are not allowed in automatic line continuance
+                        // blank or whitespace-only lines are not allowed in automatic line continuation
                         return false;
                     }
 
@@ -1409,10 +1420,10 @@ namespace System.Management.Automation.Language
                     continue;
                 }
 
-                return c == '|';
+                return c == continuationChar;
             }
 
-            return _script[_script.Length - 1] == '|';
+            return _script[_script.Length - 1] == continuationChar;
         }
 
         private int SkipLineComment(int i)
@@ -1451,17 +1462,28 @@ namespace System.Management.Automation.Language
 
             switch (c)
             {
-                case '0': return '\0';
-                case 'a': return '\a';
-                case 'b': return '\b';
-                case 'e': return '\u001b';
-                case 'f': return '\f';
-                case 'n': return '\n';
-                case 'r': return '\r';
-                case 't': return '\t';
-                case 'u': return ScanUnicodeEscape(out surrogateCharacter);
-                case 'v': return '\v';
-                default: return c;
+                case '0':
+                    return '\0';
+                case 'a':
+                    return '\a';
+                case 'b':
+                    return '\b';
+                case 'e':
+                    return '\u001b';
+                case 'f':
+                    return '\f';
+                case 'n':
+                    return '\n';
+                case 'r':
+                    return '\r';
+                case 't':
+                    return '\t';
+                case 'u':
+                    return ScanUnicodeEscape(out surrogateCharacter);
+                case 'v':
+                    return '\v';
+                default:
+                    return c;
             }
         }
 
@@ -2034,7 +2056,7 @@ namespace System.Management.Automation.Language
                     return;
                 }
 
-                if (!(argumentValue is string))
+                if (argumentValue is not string)
                 {
                     ReportError(argumentAst.Extent,
                         nameof(ParserStrings.RequiresInvalidStringArgument),
@@ -2047,7 +2069,7 @@ namespace System.Management.Automation.Language
             }
             else if (PSSnapinToken.StartsWith(parameter.ParameterName, StringComparison.OrdinalIgnoreCase))
             {
-                if (!(argumentValue is string))
+                if (argumentValue is not string)
                 {
                     ReportError(argumentAst.Extent,
                         nameof(ParserStrings.RequiresInvalidStringArgument),
@@ -2088,7 +2110,7 @@ namespace System.Management.Automation.Language
                     return;
                 }
 
-                if (argumentValue is string || !(argumentValue is IEnumerable))
+                if (argumentValue is string || argumentValue is not IEnumerable)
                 {
                     requiredEditions = HandleRequiresPSEditionArgument(argumentAst, argumentValue, ref requiredEditions);
                 }
@@ -2143,7 +2165,7 @@ namespace System.Management.Automation.Language
             }
             else if (assemblyToken.StartsWith(parameter.ParameterName, StringComparison.OrdinalIgnoreCase))
             {
-                if (argumentValue is string || !(argumentValue is IEnumerable))
+                if (argumentValue is string || argumentValue is not IEnumerable)
                 {
                     requiredAssemblies = HandleRequiresAssemblyArgument(argumentAst, argumentValue, requiredAssemblies);
                 }
@@ -2197,7 +2219,7 @@ namespace System.Management.Automation.Language
 
         private List<string> HandleRequiresAssemblyArgument(Ast argumentAst, object arg, List<string> requiredAssemblies)
         {
-            if (!(arg is string))
+            if (arg is not string)
             {
                 ReportError(argumentAst.Extent,
                     nameof(ParserStrings.RequiresInvalidStringArgument),
@@ -2220,7 +2242,7 @@ namespace System.Management.Automation.Language
 
         private List<string> HandleRequiresPSEditionArgument(Ast argumentAst, object arg, ref List<string> requiredEditions)
         {
-            if (!(arg is string))
+            if (arg is not string)
             {
                 ReportError(argumentAst.Extent,
                     nameof(ParserStrings.RequiresInvalidStringArgument),
@@ -2596,7 +2618,7 @@ namespace System.Management.Automation.Language
                     nameof(ParserStrings.UnexpectedCharactersAfterHereStringHeader),
                     ParserStrings.UnexpectedCharactersAfterHereStringHeader);
 
-                do
+                while (true)
                 {
                     c = GetChar();
                     if (c == header[1] && (PeekChar() == '@'))
@@ -2610,7 +2632,7 @@ namespace System.Management.Automation.Language
                         UngetChar();
                         break;
                     }
-                } while (true);
+                }
 
                 return false;
             }
@@ -3548,8 +3570,9 @@ namespace System.Management.Automation.Language
             {
                 try
                 {
-                    NumberStyles style = NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint |
-                                         NumberStyles.AllowExponent;
+                    NumberStyles style = NumberStyles.AllowLeadingSign
+                        | NumberStyles.AllowDecimalPoint
+                        | NumberStyles.AllowExponent;
 
                     if (real)
                     {
@@ -3676,9 +3699,21 @@ namespace System.Management.Automation.Language
                             }
 
                             // If we're expecting a sign bit, remove the leading 0 added in ScanNumberHelper
-                            if (!suffix.HasFlag(NumberSuffixFlags.Unsigned) && ((strNum.Length - 1) & 7) == 0)
+                            if (!suffix.HasFlag(NumberSuffixFlags.Unsigned))
                             {
-                                strNum = strNum.Slice(1);
+                                var expectedLength = suffix switch
+                                {
+                                    NumberSuffixFlags.SignedByte => 2,
+                                    NumberSuffixFlags.Short => 4,
+                                    NumberSuffixFlags.Long => 16,
+                                    // No suffix flag can mean int or long depending on input string length
+                                    _ => strNum.Length < 16 ? 8 : 16
+                                };
+
+                                if (strNum.Length == expectedLength + 1)
+                                {
+                                    strNum = strNum.Slice(1);
+                                }
                             }
 
                             style = NumberStyles.AllowHexSpecifier;
@@ -3858,7 +3893,7 @@ namespace System.Management.Automation.Language
                 firstChar == '.' || (firstChar >= '0' && firstChar <= '9')
                 || (AllowSignedNumbers && (firstChar == '+' || firstChar.IsDash())), "Number must start with '.', '-', or digit.");
 
-            ReadOnlySpan<char> strNum = ScanNumberHelper(firstChar, out NumberFormat format, out NumberSuffixFlags suffix, out bool real, out long multiplier);
+            string strNum = ScanNumberHelper(firstChar, out NumberFormat format, out NumberSuffixFlags suffix, out bool real, out long multiplier);
 
             // the token is not a number. i.e. 77z.exe
             if (strNum == null)
@@ -3900,7 +3935,7 @@ namespace System.Management.Automation.Language
         /// OR
         /// Return the string format of the number.
         /// </returns>
-        private ReadOnlySpan<char> ScanNumberHelper(char firstChar, out NumberFormat format, out NumberSuffixFlags suffix, out bool real, out long multiplier)
+        private string ScanNumberHelper(char firstChar, out NumberFormat format, out NumberSuffixFlags suffix, out bool real, out long multiplier)
         {
             format = NumberFormat.Decimal;
             suffix = NumberSuffixFlags.None;
@@ -4106,7 +4141,7 @@ namespace System.Management.Automation.Language
 
             if (!c.ForceStartNewToken())
             {
-                if (!InExpressionMode() || !c.ForceStartNewTokenAfterNumber())
+                if (!InExpressionMode() || !c.ForceStartNewTokenAfterNumber(ForceEndNumberOnTernaryOpChars))
                 {
                     notNumber = true;
                 }
@@ -4129,7 +4164,7 @@ namespace System.Management.Automation.Language
                 sb[0] = '-';
             }
 
-            return GetStringAndRelease(sb).AsSpan();
+            return GetStringAndRelease(sb);
         }
 
         #endregion Numbers
@@ -4206,6 +4241,26 @@ namespace System.Management.Automation.Language
                 _tokenStart = _currentIndex;
                 SkipChar();
                 return NewToken(TokenKind.LBracket);
+            }
+
+            if (c == '?')
+            {
+                _tokenStart = _currentIndex;
+                SkipChar();
+                c = PeekChar();
+                if (c == '.')
+                {
+                    SkipChar();
+                    return NewToken(TokenKind.QuestionDot);
+                }
+                else if (c == '[' && allowLBracket)
+                {
+                    SkipChar();
+                    return NewToken(TokenKind.QuestionLBracket);
+                }
+
+                UngetChar();
+                return null;
             }
 
             return null;
@@ -4508,7 +4563,7 @@ namespace System.Management.Automation.Language
                 if (PeekChar() == '=')
                 {
                     _tokenStart = _currentIndex;
-                    sb.Append("=");
+                    sb.Append('=');
                     SkipChar();
                     NewToken(TokenKind.Equals);
                     ScanAssemblyNameSpecToken(sb);
@@ -4953,12 +5008,15 @@ namespace System.Management.Automation.Language
                     if (InExpressionMode() && (char.IsDigit(c1) || c1 == '.'))
                     {
                         // check if the next token is actually a number
-                        ReadOnlySpan<char> strNum = ScanNumberHelper(c, out NumberFormat format, out NumberSuffixFlags suffix, out bool real, out long multiplier);
+                        string strNum = ScanNumberHelper(c, out _, out _, out _, out _);
                         // rescan characters after the check
                         _currentIndex = _tokenStart;
                         c = GetChar();
 
-                        if (strNum == null) { return ScanGenericToken(c); }
+                        if (strNum == null)
+                        {
+                            return ScanGenericToken(c);
+                        }
                     }
 
                     return NewToken(TokenKind.Exclaim);
@@ -4983,6 +5041,25 @@ namespace System.Management.Automation.Language
                     }
 
                     return this.NewToken(TokenKind.Colon);
+
+                case '?' when InExpressionMode():
+                    c1 = PeekChar();
+
+                    if (c1 == '?')
+                    {
+                        SkipChar();
+                        c1 = PeekChar();
+
+                        if (c1 == '=')
+                        {
+                            SkipChar();
+                            return this.NewToken(TokenKind.QuestionQuestionEquals);
+                        }
+
+                        return this.NewToken(TokenKind.QuestionQuestion);
+                    }
+
+                    return this.NewToken(TokenKind.QuestionMark);
 
                 case '\0':
                     if (AtEof())

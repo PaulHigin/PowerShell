@@ -1,7 +1,8 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
@@ -9,10 +10,8 @@ using System.Management.Automation.Internal;
 using System.Management.Automation.Internal.Host;
 using System.Management.Automation.Language;
 using System.Management.Automation.Runspaces;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
-using System.Text;
 using System.Text.RegularExpressions;
 
 using Dbg = System.Management.Automation.Diagnostics;
@@ -191,7 +190,7 @@ namespace System.Management.Automation
             this.RequestingCommandProcessor = requestingCommand.Context.CurrentCommandProcessor;
         }
 
-        public CommandProcessorBase RequestingCommandProcessor { get; private set; }
+        public CommandProcessorBase RequestingCommandProcessor { get; }
     }
 
     #endregion Flow Control Exceptions
@@ -279,6 +278,7 @@ namespace System.Management.Automation
 
         private const int _MinCache = -100;
         private const int _MaxCache = 1000;
+
         private static readonly object[] s_integerCache = new object[_MaxCache - _MinCache];
         private static readonly string[] s_chars = new string[255];
         internal static readonly object _TrueObject = (object)true;
@@ -601,7 +601,8 @@ namespace System.Management.Automation
 
                 int subStringLength = 0;
 
-                for (int charCount = 0; charCount < item.Length; charCount++) {
+                for (int charCount = 0; charCount < item.Length; charCount++)
+                {
                     // Evaluate the predicate using the character at cursor.
                     object predicateResult = predicate.DoInvokeReturnAsIs(
                         useLocalScope: true,
@@ -904,7 +905,6 @@ namespace System.Management.Automation
             return null;
         }
 
-
         /// <summary>
         /// The implementation of the PowerShell -replace operator....
         /// </summary>
@@ -927,7 +927,7 @@ namespace System.Management.Automation
                 {
                     // only allow 1 or 2 arguments to -replace
                     throw InterpreterError.NewInterpreterException(rval, typeof(RuntimeException), errorPosition,
-                        "BadReplaceArgument", ParserStrings.BadReplaceArgument, ignoreCase ? "-ireplace" : "-replace", rList.Count);
+                        "BadReplaceArgument", ParserStrings.BadReplaceArgument, errorPosition.Text, rList.Count);
                 }
 
                 if (rList.Count > 0)
@@ -968,7 +968,15 @@ namespace System.Management.Automation
             IEnumerator list = LanguagePrimitives.GetEnumerator(lval);
             if (list == null)
             {
-                string lvalString = lval?.ToString() ?? string.Empty;
+                string lvalString;
+                if (ExperimentalFeature.IsEnabled("PSCultureInvariantReplaceOperator"))
+                {
+                    lvalString = PSObject.ToStringParser(context, lval) ?? string.Empty;
+                }
+                else
+                {
+                    lvalString = lval?.ToString() ?? string.Empty;
+                }
 
                 return ReplaceOperatorImpl(context, lvalString, rr, substitute);
             }
@@ -1169,13 +1177,10 @@ namespace System.Management.Automation
 
             // if passed an explicit regex, just use it
             // otherwise compile the expression.
-            Regex r = PSObject.Base(rval) as Regex;
-            if (r == null)
-            {
-                // In this situation, creation of Regex should not fail. We are not
-                // processing ArgumentException in this case.
-                r = NewRegex(PSObject.ToStringParser(context, rval), reOptions);
-            }
+            // In this situation, creation of Regex should not fail. We are not
+            // processing ArgumentException in this case.
+            Regex r = PSObject.Base(rval) as Regex
+                ?? NewRegex(PSObject.ToStringParser(context, rval), reOptions);
 
             IEnumerator list = LanguagePrimitives.GetEnumerator(lval);
             if (list == null)
@@ -1347,35 +1352,37 @@ namespace System.Management.Automation
         }
 
         /// <summary>
-        /// Cache regular expressions...
+        /// Cache regular expressions.
         /// </summary>
         /// <param name="patternString">The string to find the pattern for.</param>
-        /// <param name="options">The options used to create the regex...</param>
-        /// <returns>A case-insensitive Regex...</returns>
+        /// <param name="options">The options used to create the regex.</param>
+        /// <returns>New or cached Regex.</returns>
         internal static Regex NewRegex(string patternString, RegexOptions options)
         {
-            if (options != RegexOptions.IgnoreCase)
-                return new Regex(patternString, options);
-
-            lock (s_regexCache)
+            var subordinateRegexCache = s_regexCache.GetOrAdd(options, s_subordinateRegexCacheCreationDelegate);
+            if (subordinateRegexCache.TryGetValue(patternString, out Regex result))
             {
-                Regex result;
-                if (s_regexCache.TryGetValue(patternString, out result))
+                return result;
+            }
+            else
+            {
+                if (subordinateRegexCache.Count > MaxRegexCache)
                 {
-                    return result;
+                    // TODO: it would be useful to get a notice (in telemetry?) if the cache is full.
+                    subordinateRegexCache.Clear();
                 }
-                else
-                {
-                    if (s_regexCache.Count > MaxRegexCache)
-                        s_regexCache.Clear();
-                    Regex re = new Regex(patternString, RegexOptions.IgnoreCase);
-                    s_regexCache.Add(patternString, re);
-                    return re;
-                }
+
+                var regex = new Regex(patternString, options);
+                return subordinateRegexCache.GetOrAdd(patternString, regex);
             }
         }
 
-        private static Dictionary<string, Regex> s_regexCache = new Dictionary<string, Regex>();
+        private static readonly ConcurrentDictionary<RegexOptions, ConcurrentDictionary<string, Regex>> s_regexCache =
+            new ConcurrentDictionary<RegexOptions, ConcurrentDictionary<string, Regex>>();
+
+        private static readonly Func<RegexOptions, ConcurrentDictionary<string, Regex>> s_subordinateRegexCacheCreationDelegate =
+            key => new ConcurrentDictionary<string, Regex>(StringComparer.Ordinal);
+
         private const int MaxRegexCache = 1000;
 
         /// <summary>
@@ -1459,8 +1466,7 @@ namespace System.Management.Automation
                 return string.Empty;
             }
 
-            PSObject mshObj = obj as PSObject;
-            if (mshObj == null)
+            if (!(obj is PSObject mshObj))
             {
                 return obj.GetType().FullName;
             }
@@ -1564,9 +1570,7 @@ namespace System.Management.Automation
                 // not really a method call.
                 if (valueToSet != AutomationNull.Value)
                 {
-                    PSParameterizedProperty propertyToSet = targetMethod as PSParameterizedProperty;
-
-                    if (propertyToSet == null)
+                    if (!(targetMethod is PSParameterizedProperty propertyToSet))
                     {
                         throw InterpreterError.NewInterpreterException(methodName, typeof(RuntimeException), errorPosition,
                                                                        "ParameterizedPropertyAssignmentFailed", ParserStrings.ParameterizedPropertyAssignmentFailed, GetTypeFullName(target), methodName);
@@ -1628,13 +1632,15 @@ namespace System.Management.Automation
     /// </summary>
     internal class RangeEnumerator : IEnumerator
     {
-        private int _lowerBound;
+        private readonly int _lowerBound;
+
         internal int LowerBound
         {
             get { return _lowerBound; }
         }
 
-        private int _upperBound;
+        private readonly int _upperBound;
+
         internal int UpperBound
         {
             get { return _upperBound; }
@@ -1657,7 +1663,7 @@ namespace System.Management.Automation
             get { return _current; }
         }
 
-        private int _increment = 1;
+        private readonly int _increment = 1;
 
         private bool _firstElement = true;
 
@@ -1698,7 +1704,7 @@ namespace System.Management.Automation
     /// </summary>
     internal class CharRangeEnumerator : IEnumerator
     {
-        private int _increment = 1;
+        private readonly int _increment = 1;
 
         private bool _firstElement = true;
 
@@ -1716,15 +1722,9 @@ namespace System.Management.Automation
             get { return Current; }
         }
 
-        internal char LowerBound
-        {
-            get; private set;
-        }
+        internal char LowerBound { get; }
 
-        internal char UpperBound
-        {
-            get; private set;
-        }
+        internal char UpperBound { get; }
 
         public char Current
         {
@@ -1800,7 +1800,7 @@ namespace System.Management.Automation
         {
             // errToken may be null
             if (string.IsNullOrEmpty(resourceIdAndErrorId))
-                throw PSTraceSource.NewArgumentException("resourceIdAndErrorId");
+                throw PSTraceSource.NewArgumentException(nameof(resourceIdAndErrorId));
             // innerException may be null
             // args may be null or empty
 
@@ -1809,7 +1809,7 @@ namespace System.Management.Automation
             try
             {
                 string message;
-                if (args == null || 0 == args.Length)
+                if (args == null || args.Length == 0)
                 {
                     // Don't format in case the string contains literal curly braces
                     message = resourceString;
@@ -1970,7 +1970,7 @@ namespace System.Management.Automation
             if (context.PSDebugTraceLevel > level)
             {
                 string message;
-                if (args == null || 0 == args.Length)
+                if (args == null || args.Length == 0)
                 {
                     // Don't format in case the string contains literal curly braces
                     message = resourceString;

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -16,7 +16,7 @@ namespace Microsoft.PowerShell.Commands
     /// A cmdlet to retrieve time zone information.
     /// </summary>
     [Cmdlet(VerbsCommon.Get, "TimeZone", DefaultParameterSetName = "Name",
-        HelpUri = "https://go.microsoft.com/fwlink/?LinkId=799468")]
+        HelpUri = "https://go.microsoft.com/fwlink/?LinkId=2096904")]
     [Alias("gtz")]
     public class GetTimeZoneCommand : PSCmdlet
     {
@@ -120,7 +120,7 @@ namespace Microsoft.PowerShell.Commands
     [Cmdlet(VerbsCommon.Set, "TimeZone",
         SupportsShouldProcess = true,
         DefaultParameterSetName = "Name",
-        HelpUri = "https://go.microsoft.com/fwlink/?LinkId=799469")]
+        HelpUri = "https://go.microsoft.com/fwlink/?LinkId=2097056")]
     [Alias("stz")]
     public class SetTimeZoneCommand : PSCmdlet
     {
@@ -188,7 +188,7 @@ namespace Microsoft.PowerShell.Commands
             {
                 // lookup the time zone name and make sure we have one (and only one) match
                 TimeZoneInfo[] timeZones = TimeZoneHelper.LookupSystemTimeZoneInfoByName(Name);
-                if (0 == timeZones.Length)
+                if (timeZones.Length == 0)
                 {
                     string message = string.Format(CultureInfo.InvariantCulture,
                         TimeZoneResources.TimeZoneNameNotFound, Name);

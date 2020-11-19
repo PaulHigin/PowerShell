@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -24,14 +24,14 @@ namespace Microsoft.PowerShell.Commands
             ParameterSetName = FileParameterSet)]
         [Alias("PSPath", "Path")]
         [ValidateNotNull]
-        public string[] AppendPath { set; get; } = Array.Empty<string>();
+        public string[] AppendPath { get; set; } = Array.Empty<string>();
 
         /// <summary>
         /// Files to prepend to the existing set.
         /// </summary>
         [Parameter(ParameterSetName = FileParameterSet)]
         [ValidateNotNull]
-        public string[] PrependPath { set; get; } = Array.Empty<string>();
+        public string[] PrependPath { get; set; } = Array.Empty<string>();
 
         private static void ReportWrongExtension(string file, string errorId, PSCmdlet cmdlet)
         {

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -11,7 +11,6 @@ using System.Diagnostics.Eventing.Reader;
 using System.Globalization;
 using System.Management.Automation;
 using System.Net;
-using System.Reflection;
 using System.Resources;
 using System.Security.Principal;
 using System.Text;
@@ -24,7 +23,7 @@ namespace Microsoft.PowerShell.Commands
     ///
     /// Class that implements the Get-WinEvent cmdlet.
     ///
-    [Cmdlet(VerbsCommon.Get, "WinEvent", DefaultParameterSetName = "GetLogSet", HelpUri = "https://go.microsoft.com/fwlink/?LinkID=138336")]
+    [Cmdlet(VerbsCommon.Get, "WinEvent", DefaultParameterSetName = "GetLogSet", HelpUri = "https://go.microsoft.com/fwlink/?LinkID=2096581")]
     public sealed class GetWinEventCommand : PSCmdlet
     {
         /// <summary>
@@ -379,8 +378,8 @@ namespace Microsoft.PowerShell.Commands
         private const string SelectCloser = "</Select>";
         private const string suppressOpener = "<Suppress>*";
         private const string suppressCloser = "</Suppress>";
-        private const string propOpen = "[";
-        private const string propClose = "]";
+        private const char propOpen = '[';
+        private const char propClose = ']';
         private const string filePrefix = "file://";
         private const string NamedDataTemplate = "((EventData[Data[@Name='{0}']='{1}']) or (UserData/*/{0}='{1}'))";
         private const string DataTemplate = "(EventData/Data='{0}')";
@@ -396,14 +395,14 @@ namespace Microsoft.PowerShell.Commands
         // Other private members and constants
         //
         private ResourceManager _resourceMgr = null;
-        private Dictionary<string, StringCollection> _providersByLogMap = new Dictionary<string, StringCollection>();
+        private readonly Dictionary<string, StringCollection> _providersByLogMap = new Dictionary<string, StringCollection>();
 
         private StringCollection _logNamesMatchingWildcard = null;
-        private StringCollection _resolvedPaths = new StringCollection();
+        private readonly StringCollection _resolvedPaths = new StringCollection();
 
-        private List<string> _accumulatedLogNames = new List<string>();
-        private List<string> _accumulatedProviderNames = new List<string>();
-        private List<string> _accumulatedFileNames = new List<string>();
+        private readonly List<string> _accumulatedLogNames = new List<string>();
+        private readonly List<string> _accumulatedProviderNames = new List<string>();
+        private readonly List<string> _accumulatedFileNames = new List<string>();
 
         private const uint MAX_EVENT_BATCH = 100;
 
@@ -592,7 +591,7 @@ namespace Microsoft.PowerShell.Commands
                 }
 
                 logQuery.Session = eventLogSession;
-                logQuery.ReverseDirection = !_oldest; ;
+                logQuery.ReverseDirection = !_oldest;
 
                 ReadEvents(logQuery);
             }
@@ -608,13 +607,12 @@ namespace Microsoft.PowerShell.Commands
                 foreach (string logPattern in _listLog)
                 {
                     bool bMatchFound = false;
+                    WildcardPattern wildLogPattern = new WildcardPattern(logPattern, WildcardOptions.IgnoreCase);
 
                     foreach (string logName in eventLogSession.GetLogNames())
                     {
-                        WildcardPattern wildLogPattern = new WildcardPattern(logPattern, WildcardOptions.IgnoreCase);
-
                         if (((!WildcardPattern.ContainsWildcardCharacters(logPattern))
-                            && string.Equals(logPattern, logName, StringComparison.CurrentCultureIgnoreCase))
+                            && string.Equals(logPattern, logName, StringComparison.OrdinalIgnoreCase))
                             ||
                             (wildLogPattern.IsMatch(logName)))
                         {
@@ -679,13 +677,12 @@ namespace Microsoft.PowerShell.Commands
                 foreach (string provPattern in _listProvider)
                 {
                     bool bMatchFound = false;
+                    WildcardPattern wildProvPattern = new WildcardPattern(provPattern, WildcardOptions.IgnoreCase);
 
                     foreach (string provName in eventLogSession.GetProviderNames())
                     {
-                        WildcardPattern wildProvPattern = new WildcardPattern(provPattern, WildcardOptions.IgnoreCase);
-
                         if (((!WildcardPattern.ContainsWildcardCharacters(provPattern))
-                            && string.Equals(provPattern, provName, StringComparison.CurrentCultureIgnoreCase))
+                            && string.Equals(provPattern, provName, StringComparison.OrdinalIgnoreCase))
                             ||
                             (wildProvPattern.IsMatch(provName)))
                         {
@@ -965,6 +962,14 @@ namespace Microsoft.PowerShell.Commands
 
                 case "GetLogSet":
                     {
+                        const int WindowsEventLogAPILimit = 256;
+                        if (_logNamesMatchingWildcard.Count > WindowsEventLogAPILimit)
+                        {
+                            string msg = _resourceMgr.GetString("LogCountLimitExceeded");
+                            Exception exc = new Exception(string.Format(CultureInfo.InvariantCulture, msg, _logNamesMatchingWildcard.Count, WindowsEventLogAPILimit));
+                            ThrowTerminatingError(new ErrorRecord(exc, "LogCountLimitExceeded", ErrorCategory.LimitsExceeded, null));
+                        }
+
                         result.Append(queryListOpen);
                         uint queryId = 0;
                         foreach (string log in _logNamesMatchingWildcard)
@@ -1136,7 +1141,7 @@ namespace Microsoft.PowerShell.Commands
                     List<string> logPatterns = new List<string>();
                     if (hash[hashkey_logname_lc] is Array)
                     {
-                        foreach (Object elt in (Array)hash[hashkey_logname_lc])
+                        foreach (object elt in (Array)hash[hashkey_logname_lc])
                         {
                             logPatterns.Add(elt.ToString());
                         }
@@ -1161,7 +1166,7 @@ namespace Microsoft.PowerShell.Commands
                 {
                     if (hash[hashkey_path_lc] is Array)
                     {
-                        foreach (Object elt in (Array)hash[hashkey_path_lc])
+                        foreach (object elt in (Array)hash[hashkey_path_lc])
                         {
                             StringCollection resolvedPaths = ValidateAndResolveFilePath(elt.ToString());
                             foreach (string resolvedPath in resolvedPaths)
@@ -1191,7 +1196,7 @@ namespace Microsoft.PowerShell.Commands
                     List<string> provPatterns = new List<string>();
                     if (hash[hashkey_providername_lc] is Array)
                     {
-                        foreach (Object elt in (Array)hash[hashkey_providername_lc])
+                        foreach (object elt in (Array)hash[hashkey_providername_lc])
                         {
                             provPatterns.Add(elt.ToString());
                         }
@@ -1341,27 +1346,27 @@ namespace Microsoft.PowerShell.Commands
         // HandleEventIdHashValue helper for hashtable structured query builder.
         // Constructs and returns EventId XPath portion as a string.
         //
-        private string HandleEventIdHashValue(Object value)
+        private string HandleEventIdHashValue(object value)
         {
             StringBuilder ret = new StringBuilder();
             Array idsArray = value as Array;
             if (idsArray != null)
             {
-                ret.Append("(");
+                ret.Append('(');
                 for (int i = 0; i < idsArray.Length; i++)
                 {
-                    ret.Append(SystemEventIDTemplate).Append(idsArray.GetValue(i).ToString()).Append(")");
+                    ret.Append(SystemEventIDTemplate).Append(idsArray.GetValue(i).ToString()).Append(')');
                     if (i < (idsArray.Length - 1))
                     {
                         ret.Append(" or ");
                     }
                 }
 
-                ret.Append(")");
+                ret.Append(')');
             }
             else
             {
-                ret.Append(SystemEventIDTemplate).Append(value).Append(")");
+                ret.Append(SystemEventIDTemplate).Append(value).Append(')');
             }
 
             return ret.ToString();
@@ -1371,27 +1376,27 @@ namespace Microsoft.PowerShell.Commands
         // HandleLevelHashValue helper for hashtable structured query builder.
         // Constructs and returns Level XPath portion as a string.
         //
-        private string HandleLevelHashValue(Object value)
+        private string HandleLevelHashValue(object value)
         {
             StringBuilder ret = new StringBuilder();
             Array levelsArray = value as Array;
             if (levelsArray != null)
             {
-                ret.Append("(");
+                ret.Append('(');
                 for (int i = 0; i < levelsArray.Length; i++)
                 {
-                    ret.Append(SystemLevelTemplate).Append(levelsArray.GetValue(i).ToString()).Append(")");
+                    ret.Append(SystemLevelTemplate).Append(levelsArray.GetValue(i).ToString()).Append(')');
                     if (i < (levelsArray.Length - 1))
                     {
                         ret.Append(" or ");
                     }
                 }
 
-                ret.Append(")");
+                ret.Append(')');
             }
             else
             {
-                ret.Append(SystemLevelTemplate).Append(value).Append(")");
+                ret.Append(SystemLevelTemplate).Append(value).Append(')');
             }
 
             return ret.ToString();
@@ -1401,7 +1406,7 @@ namespace Microsoft.PowerShell.Commands
         // HandleKeywordHashValue helper for hashtable structured query builder.
         // Constructs and returns Keyword XPath portion as a string.
         //
-        private string HandleKeywordHashValue(Object value)
+        private string HandleKeywordHashValue(object value)
         {
             Int64 keywordsMask = 0;
             Int64 keywordLong = 0;
@@ -1409,7 +1414,7 @@ namespace Microsoft.PowerShell.Commands
             Array keywordArray = value as Array;
             if (keywordArray != null)
             {
-                foreach (Object keyword in keywordArray)
+                foreach (object keyword in keywordArray)
                 {
                     if (KeywordStringToInt64(keyword.ToString(), ref keywordLong))
                     {
@@ -1436,7 +1441,7 @@ namespace Microsoft.PowerShell.Commands
         // Handles both SIDs and domain account names.
         // Writes an error and returns an empty string if the SID or account names are not valid.
         //
-        private string HandleContextHashValue(Object value)
+        private string HandleContextHashValue(object value)
         {
             SecurityIdentifier sidCandidate = null;
             try
@@ -1472,7 +1477,7 @@ namespace Microsoft.PowerShell.Commands
         // Constructs and returns TimeCreated XPath portion as a string.
         // NOTE that it also handles the hashtable "endtime" value (if supplied).
         //
-        private string HandleStartTimeHashValue(Object value, Hashtable hash)
+        private string HandleStartTimeHashValue(object value, Hashtable hash)
         {
             StringBuilder ret = new StringBuilder();
             DateTime startTime = new DateTime();
@@ -1515,7 +1520,7 @@ namespace Microsoft.PowerShell.Commands
         // Constructs and returns TimeCreated XPath portion as a string.
         // NOTE that it also handles the hashtable "starttime" value (if supplied).
         //
-        private string HandleEndTimeHashValue(Object value, Hashtable hash)
+        private string HandleEndTimeHashValue(object value, Hashtable hash)
         {
             StringBuilder ret = new StringBuilder();
             DateTime endTime = new DateTime();
@@ -1559,13 +1564,13 @@ namespace Microsoft.PowerShell.Commands
         // HandleDataHashValue helper for hashtable structured query builder.
         // Constructs and returns EventData/Data XPath portion as a string.
         //
-        private string HandleDataHashValue(Object value)
+        private string HandleDataHashValue(object value)
         {
             StringBuilder ret = new StringBuilder();
             Array dataArray = value as Array;
             if (dataArray != null)
             {
-                ret.Append("(");
+                ret.Append('(');
                 for (int i = 0; i < dataArray.Length; i++)
                 {
                     ret.AppendFormat(CultureInfo.InvariantCulture, DataTemplate, dataArray.GetValue(i).ToString());
@@ -1575,7 +1580,7 @@ namespace Microsoft.PowerShell.Commands
                     }
                 }
 
-                ret.Append(")");
+                ret.Append(')');
             }
             else
             {
@@ -1590,13 +1595,13 @@ namespace Microsoft.PowerShell.Commands
         // Constructs and returns named event data field XPath portion as a string.
         // Fix Issue #2327
         //
-        private string HandleNamedDataHashValue(String key, object value)
+        private string HandleNamedDataHashValue(string key, object value)
         {
             StringBuilder ret = new StringBuilder();
             Array dataArray = value as Array;
             if (dataArray != null)
             {
-                ret.Append("(");
+                ret.Append('(');
                 for (int i = 0; i < dataArray.Length; i++)
                 {
                     ret.AppendFormat(CultureInfo.InvariantCulture,
@@ -1608,7 +1613,7 @@ namespace Microsoft.PowerShell.Commands
                     }
                 }
 
-                ret.Append(")");
+                ret.Append(')');
             }
             else
             {
@@ -1844,7 +1849,7 @@ namespace Microsoft.PowerShell.Commands
                         Array eltArray = value as Array;
                         if (eltArray != null)
                         {
-                            foreach (Object elt in eltArray)
+                            foreach (object elt in eltArray)
                             {
                                 if (elt == null)
                                 {
@@ -1914,14 +1919,14 @@ namespace Microsoft.PowerShell.Commands
             StringBuilder predicate = new StringBuilder("System/Provider[");
             for (int i = 0; i < providers.Count; i++)
             {
-                predicate.Append("@Name='").Append(providers[i]).Append("'");
+                predicate.Append("@Name='").Append(providers[i]).Append('\'');
                 if (i < (providers.Count - 1))
                 {
                     predicate.Append(" or ");
                 }
             }
 
-            predicate.Append("]");
+            predicate.Append(']');
 
             return predicate.ToString();
         }
@@ -1958,14 +1963,14 @@ namespace Microsoft.PowerShell.Commands
 
             for (int i = 0; i < uniqueProviderNames.Count; i++)
             {
-                predicate.Append("@Name='").Append(uniqueProviderNames[i]).Append("'");
+                predicate.Append("@Name='").Append(uniqueProviderNames[i]).Append('\'');
                 if (i < uniqueProviderNames.Count - 1)
                 {
                     predicate.Append(" or ");
                 }
             }
 
-            predicate.Append("]");
+            predicate.Append(']');
 
             return predicate.ToString();
         }
@@ -2012,7 +2017,6 @@ namespace Microsoft.PowerShell.Commands
                         _providersByLogMap.Add(logLink.LogName.ToLowerInvariant(), provColl);
                     }
                     else
-
                     {
                         //
                         // Log is there: add provider, if needed
@@ -2059,12 +2063,12 @@ namespace Microsoft.PowerShell.Commands
             foreach (string logPattern in logPatterns)
             {
                 bool bMatched = false;
+                WildcardPattern wildLogPattern = new WildcardPattern(logPattern, WildcardOptions.IgnoreCase);
+
                 foreach (string actualLogName in eventLogSession.GetLogNames())
                 {
-                    WildcardPattern wildLogPattern = new WildcardPattern(logPattern, WildcardOptions.IgnoreCase);
-
                     if (((!WildcardPattern.ContainsWildcardCharacters(logPattern))
-                        && (logPattern.Equals(actualLogName, StringComparison.CurrentCultureIgnoreCase)))
+                        && (logPattern.Equals(actualLogName, StringComparison.OrdinalIgnoreCase)))
                         ||
                         (wildLogPattern.IsMatch(actualLogName)))
                     {
@@ -2128,12 +2132,12 @@ namespace Microsoft.PowerShell.Commands
             foreach (string provPattern in providerPatterns)
             {
                 bool bMatched = false;
+                WildcardPattern wildProvPattern = new WildcardPattern(provPattern, WildcardOptions.IgnoreCase);
+
                 foreach (string provName in eventLogSession.GetProviderNames())
                 {
-                    WildcardPattern wildProvPattern = new WildcardPattern(provPattern, WildcardOptions.IgnoreCase);
-
                     if (((!WildcardPattern.ContainsWildcardCharacters(provPattern))
-                      && (provPattern.Equals(provName, StringComparison.CurrentCultureIgnoreCase)))
+                      && (provPattern.Equals(provName, StringComparison.OrdinalIgnoreCase)))
                       ||
                       (wildProvPattern.IsMatch(provName)))
                     {
@@ -2153,4 +2157,3 @@ namespace Microsoft.PowerShell.Commands
         }
     }
 }
-

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
@@ -10,11 +10,10 @@ namespace System.Management.Automation
     /// Defines a data structure used to represent informational context destined for the host or user.
     /// </summary>
     /// <remarks>
-    /// InformationRecords are passed to <see cref="System.Management.Automation.Cmdlet.WriteInformation(Object, string[])"/>,
+    /// InformationRecords are passed to <see cref="System.Management.Automation.Cmdlet.WriteInformation(object, string[])"/>,
     /// which, according to host or user preference, forwards that information on to the host for rendering to the user.
     /// </remarks>
-    /// <seealso cref="System.Management.Automation.Cmdlet.WriteInformation(Object, string[])"/>
-
+    /// <seealso cref="System.Management.Automation.Cmdlet.WriteInformation(object, string[])"/>
     [DataContract()]
     public class InformationRecord
     {
@@ -23,14 +22,14 @@ namespace System.Management.Automation
         /// </summary>
         /// <param name="messageData">The object to be transmitted to the host.</param>
         /// <param name="source">The source of the message (i.e.: script path, function name, etc.).</param>
-        public InformationRecord(Object messageData, string source)
+        public InformationRecord(object messageData, string source)
         {
             this.MessageData = messageData;
             this.Source = source;
 
             this.TimeGenerated = DateTime.Now;
             this.NativeThreadId = PsUtils.GetNativeThreadId();
-            this.ManagedThreadId = (uint)System.Threading.Thread.CurrentThread.ManagedThreadId;
+            this.ManagedThreadId = (uint)Environment.CurrentManagedThreadId;
         }
 
         private InformationRecord() { }
@@ -138,7 +137,7 @@ namespace System.Management.Automation
             {
                 if (!this._processId.HasValue)
                 {
-                    this._processId = (uint)System.Diagnostics.Process.GetCurrentProcess().Id;
+                    this._processId = (uint)Environment.ProcessId;
                 }
 
                 return this._processId.Value;
@@ -180,7 +179,7 @@ namespace System.Management.Automation
         {
             InformationRecord informationRecord = new InformationRecord();
 
-            informationRecord.MessageData = RemotingDecoder.GetPropertyValue<Object>(inputObject, "MessageData");
+            informationRecord.MessageData = RemotingDecoder.GetPropertyValue<object>(inputObject, "MessageData");
             informationRecord.Source = RemotingDecoder.GetPropertyValue<string>(inputObject, "Source");
             informationRecord.TimeGenerated = RemotingDecoder.GetPropertyValue<DateTime>(inputObject, "TimeGenerated");
 

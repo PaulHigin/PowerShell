@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -29,7 +29,7 @@ namespace Microsoft.PowerShell.Cmdletization.Cim
 
         internal readonly Dictionary<string, object> queryOptions = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
 
-        internal ClientSideQuery ClientSideQuery { get; private set; }
+        internal ClientSideQuery ClientSideQuery { get; }
 
         internal CimQuery()
         {
@@ -316,12 +316,12 @@ namespace Microsoft.PowerShell.Cmdletization.Cim
         {
             if (string.IsNullOrEmpty(optionName))
             {
-                throw new ArgumentNullException("optionName");
+                throw new ArgumentNullException(nameof(optionName));
             }
 
             if (optionValue == null)
             {
-                throw new ArgumentNullException("optionValue");
+                throw new ArgumentNullException(nameof(optionValue));
             }
 
             this.queryOptions[optionName] = optionValue;

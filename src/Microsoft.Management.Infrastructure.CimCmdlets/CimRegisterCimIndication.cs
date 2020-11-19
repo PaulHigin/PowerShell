@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 #region Using directives
@@ -12,7 +12,6 @@ using System.Threading;
 
 namespace Microsoft.Management.Infrastructure.CimCmdlets
 {
-
     /// <summary>
     /// <para>
     /// Subscription result event args
@@ -56,7 +55,7 @@ namespace Microsoft.Management.Infrastructure.CimCmdlets
             }
         }
 
-        private CimSubscriptionResult result;
+        private readonly CimSubscriptionResult result;
 
         /// <summary>
         /// <para>Constructor</para>
@@ -90,7 +89,7 @@ namespace Microsoft.Management.Infrastructure.CimCmdlets
             }
         }
 
-        private Exception exception;
+        private readonly Exception exception;
 
         /// <summary>
         /// <para>Constructor</para>
@@ -170,7 +169,7 @@ namespace Microsoft.Management.Infrastructure.CimCmdlets
             DebugHelper.WriteLogEx("queryDialect = '{0}'; queryExpression = '{1}'", 0, queryDialect, queryExpression);
             if (cimSession == null)
             {
-                throw new ArgumentNullException(string.Format(CultureInfo.CurrentUICulture, Strings.NullArgument, @"cimSession"));
+                throw new ArgumentNullException(string.Format(CultureInfo.CurrentUICulture, CimCmdletStrings.NullArgument, @"cimSession"));
             }
 
             this.TargetComputerName = cimSession.ComputerName;
@@ -310,8 +309,8 @@ namespace Microsoft.Management.Infrastructure.CimCmdlets
         /// <param name="cmdlet"></param>
         internal Cmdlet Cmdlet
         {
-            set;
             get;
+            set;
         }
 
         /// <summary>
@@ -319,8 +318,8 @@ namespace Microsoft.Management.Infrastructure.CimCmdlets
         /// </summary>
         internal string TargetComputerName
         {
-            set;
             get;
+            set;
         }
 
         #endregion

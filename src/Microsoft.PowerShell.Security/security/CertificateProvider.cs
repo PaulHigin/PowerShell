@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 #if !UNIX
@@ -31,20 +31,18 @@ namespace Microsoft.PowerShell.Commands
 {
     /// <summary>
     /// Defines the Certificate Provider dynamic parameters.
-    ///
     /// We only support one dynamic parameter for Win 7 and earlier:
     /// CodeSigningCert
     /// If provided, we only return certificates valid for signing code or
     /// scripts.
     /// </summary>
-
-    internal sealed class CertificateProviderCodeSigningDynamicParameters
+    internal sealed class CertificateProviderDynamicParameters
     {
         /// <summary>
-        /// Switch that controls whether we only return
+        /// Gets or sets a switch that controls whether we only return
         /// code signing certs.
         /// </summary>
-        [Parameter()]
+        [Parameter]
         public SwitchParameter CodeSigningCert
         {
             get { return _codeSigningCert; }
@@ -53,6 +51,70 @@ namespace Microsoft.PowerShell.Commands
         }
 
         private SwitchParameter _codeSigningCert = new SwitchParameter();
+
+        /// <summary>
+        /// Gets or sets a filter that controls whether we only return
+        /// data encipherment certs.
+        /// </summary>
+        [Parameter]
+        public SwitchParameter DocumentEncryptionCert
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Gets or sets a filter that controls whether we only return
+        /// server authentication certs.
+        /// </summary>
+        [Parameter]
+        public SwitchParameter SSLServerAuthentication
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Gets or sets a filter by DNSName.
+        /// Expected content is a single DNS Name that may start and/or end
+        /// with '*': "contoso.com" or "*toso.c*".
+        /// All WildcardPattern class features supported.
+        /// </summary>
+        [Parameter]
+        public string DnsName
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Gets or sets a filter by EKU.
+        /// Expected content is one or more OID strings:
+        /// "1.3.6.1.5.5.7.3.1", "*Server*", etc.
+        /// For a cert to match, it must be valid for all listed OIDs.
+        /// All WildcardPattern class features supported.
+        /// </summary>
+        [Parameter]
+        public string[] Eku
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Gets or sets a filter by the number of valid days.
+        /// Expected content is a non-negative integer.
+        /// "0" matches all certs that have already expired.
+        /// "1" matches all certs that are currently valid and will expire
+        /// by next day (local time).
+        /// </summary>
+        [Parameter]
+        [ValidateRange(ValidateRangeKind.NonNegative)]
+        public int ExpiringInDays
+        {
+            get;
+            set;
+        } = -1;
     }
 
     /// <summary>
@@ -65,12 +127,12 @@ namespace Microsoft.PowerShell.Commands
         /// <summary>
         /// Punycode version of DNS name.
         /// </summary>
-        private string _punycodeName;
+        private readonly string _punycodeName;
 
         /// <summary>
         /// Unicode version of DNS name.
         /// </summary>
-        private string _unicodeName;
+        private readonly string _unicodeName;
 
         /// <summary>
         /// Ambiguous constructor of a DnsNameRepresentation.
@@ -169,7 +231,7 @@ namespace Microsoft.PowerShell.Commands
         /// Switch that controls whether we should delete private key
         /// when remove a certificate.
         /// </summary>
-        [Parameter()]
+        [Parameter]
         public SwitchParameter DeleteKey
         {
             get
@@ -407,7 +469,6 @@ namespace Microsoft.PowerShell.Commands
         /// <summary>
         /// Native IntPtr store handle.
         /// </summary>
-
         public IntPtr StoreHandle
         {
             get
@@ -441,7 +502,6 @@ namespace Microsoft.PowerShell.Commands
         /// <summary>
         /// True if a real store is open.
         /// </summary>
-
         public bool Valid
         {
             get
@@ -451,8 +511,8 @@ namespace Microsoft.PowerShell.Commands
         }
 
         private bool _archivedCerts = false;
-        private X509StoreLocation _storeLocation = null;
-        private string _storeName = null;
+        private readonly X509StoreLocation _storeLocation = null;
+        private readonly string _storeName = null;
         private CertificateStoreHandle _storeHandle = null;
         private bool _valid = false;
         private bool _open = false;
@@ -506,7 +566,7 @@ namespace Microsoft.PowerShell.Commands
         /// </summary>
         [TraceSource("CertificateProvider",
                       "The core command provider for certificates")]
-        private readonly static PSTraceSource s_tracer = PSTraceSource.GetTracer("CertificateProvider",
+        private static readonly PSTraceSource s_tracer = PSTraceSource.GetTracer("CertificateProvider",
                       "The core command provider for certificates");
 
         #endregion tracer
@@ -521,7 +581,7 @@ namespace Microsoft.PowerShell.Commands
         /// -- storeLocations
         /// -- pathCache.
         /// </summary>
-        private static object s_staticLock = new object();
+        private static readonly object s_staticLock = new object();
 
         /// <summary>
         /// List of store locations. They do not change once initialized.
@@ -565,6 +625,7 @@ namespace Microsoft.PowerShell.Commands
         /// this property.
         /// </remarks>
         private static Regex s_certPathRegex = null;
+
         private static Regex CertPathRegex
         {
             get
@@ -605,7 +666,7 @@ namespace Microsoft.PowerShell.Commands
                     X509StoreLocation user =
                         new X509StoreLocation(StoreLocation.CurrentUser);
                     s_storeLocations.Add(user);
-                    AddItemToCache(StoreLocation.CurrentUser.ToString(),
+                    AddItemToCache(nameof(StoreLocation.CurrentUser),
                                   user);
 
                     //
@@ -614,7 +675,7 @@ namespace Microsoft.PowerShell.Commands
                     X509StoreLocation machine =
                         new X509StoreLocation(StoreLocation.LocalMachine);
                     s_storeLocations.Add(machine);
-                    AddItemToCache(StoreLocation.LocalMachine.ToString(),
+                    AddItemToCache(nameof(StoreLocation.LocalMachine),
                                    machine);
 
                     AddItemToCache(string.Empty, s_storeLocations);
@@ -638,7 +699,6 @@ namespace Microsoft.PowerShell.Commands
         ///     path is null or empty.
         ///     destination is null or empty.
         /// </exception>
-
         protected override void RemoveItem(
                                 string path,
                                 bool recurse)
@@ -745,7 +805,6 @@ namespace Microsoft.PowerShell.Commands
         ///     path is null or empty.
         ///     destination is null or empty.
         /// </exception>
-
         protected override void MoveItem(
                                 string path,
                                 string destination)
@@ -1132,7 +1191,7 @@ namespace Microsoft.PowerShell.Commands
                     // If the inner exception is not of that type
                     // then we need to rethrow
                     //
-                    if (!(e.InnerException is CertificateProviderItemNotFoundException))
+                    if (e.InnerException is not CertificateProviderItemNotFoundException)
                     {
                         throw;
                     }
@@ -1184,15 +1243,11 @@ namespace Microsoft.PowerShell.Commands
                     }
                     else
                     {
-                        // The filter is non null.  If the certificate
-                        // satisfies the filter, output it.  Otherwise, don't.
-
+                        // The filter is non null. If the certificate
+                        // satisfies the filter, output it. Otherwise, don't.
                         X509Certificate2 cert = item as X509Certificate2;
                         Dbg.Diagnostics.Assert(cert != null, "item should be a certificate");
 
-                        // If it's Win8 or above, filter matching for certain properties is done by
-                        // the certificate enumeration filter at the API level. In that case,
-                        // filter.Purpose will be 'None' and MatchesFilter will return 'True'.
                         if (MatchesFilter(cert, filter))
                         {
                             WriteItemObject(item, path, isContainer);
@@ -1324,7 +1379,7 @@ namespace Microsoft.PowerShell.Commands
 
             if (string.IsNullOrEmpty(path))
             {
-                throw PSTraceSource.NewArgumentException("path");
+                throw PSTraceSource.NewArgumentException(nameof(path));
             }
 
             // Normalize the path
@@ -1561,7 +1616,6 @@ namespace Microsoft.PowerShell.Commands
         /// </summary>
         /// <param name="pProvInfo">Key prov info.</param>
         /// <returns>No return.</returns>
-
         [SuppressMessage("Microsoft.Usage", "CA1806:DoNotIgnoreMethodResults", MessageId = "System.Management.Automation.Security.NativeMethods.NCryptSetProperty(System.IntPtr,System.String,System.Void*,System.Int32,System.Int32)")]
         [SuppressMessage("Microsoft.Usage", "CA1806:DoNotIgnoreMethodResults", MessageId = "System.Management.Automation.Security.NativeMethods.NCryptFreeObject(System.IntPtr)")]
         private void DoDeleteKey(IntPtr pProvInfo)
@@ -1649,7 +1703,7 @@ namespace Microsoft.PowerShell.Commands
                         ThrowErrorRemoting(stat);
                     }
 
-                    if (0 != (cngKeyFlag & (uint)Security.NativeMethods.NCryptDeletKeyFlag.NCRYPT_SILENT_FLAG))
+                    if ((cngKeyFlag & (uint)Security.NativeMethods.NCryptDeletKeyFlag.NCRYPT_SILENT_FLAG) != 0)
                     {
                         unsafe
                         {
@@ -1690,7 +1744,6 @@ namespace Microsoft.PowerShell.Commands
         /// <param name="fDeleteKey">Boolean to specify whether or not to delete private key.</param>
         /// <param name = "sourcePath">Source path.</param>
         /// <returns>No return.</returns>
-
         private void RemoveCertStore(string storeName, bool fDeleteKey, string sourcePath)
         {
             // if recurse is true, remove every cert in the store
@@ -1788,7 +1841,6 @@ namespace Microsoft.PowerShell.Commands
         /// <param name="fMachine">Machine context or user.</param>
         /// <param name = "sourcePath">Source path.</param>
         /// <returns>No return.</returns>
-
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA1806:DoNotIgnoreMethodResults")]
         private void DoRemove(X509Certificate2 cert, bool fDeleteKey, bool fMachine, string sourcePath)
         {
@@ -2211,7 +2263,7 @@ namespace Microsoft.PowerShell.Commands
         /// </returns>
         protected override object GetItemDynamicParameters(string path)
         {
-            return new CertificateProviderCodeSigningDynamicParameters();
+            return new CertificateProviderDynamicParameters();
         }
 
         /// <summary>
@@ -2233,7 +2285,7 @@ namespace Microsoft.PowerShell.Commands
         /// </returns>
         protected override object GetChildItemsDynamicParameters(string path, bool recurse)
         {
-            return new CertificateProviderCodeSigningDynamicParameters();
+            return new CertificateProviderDynamicParameters();
         }
 
         #endregion DriveCmdletProvider overrides
@@ -2606,14 +2658,48 @@ namespace Microsoft.PowerShell.Commands
 
             if (DynamicParameters != null)
             {
-                CertificateProviderCodeSigningDynamicParameters dp =
-                    DynamicParameters as CertificateProviderCodeSigningDynamicParameters;
+                CertificateProviderDynamicParameters dp =
+                    DynamicParameters as CertificateProviderDynamicParameters;
                 if (dp != null)
                 {
                     if (dp.CodeSigningCert)
                     {
                         filter = new CertificateFilterInfo();
                         filter.Purpose = CertificatePurpose.CodeSigning;
+                    }
+
+                    if (dp.DocumentEncryptionCert)
+                    {
+                        filter ??= new CertificateFilterInfo();
+                        filter.Purpose = CertificatePurpose.DocumentEncryption;
+                    }
+
+                    if (dp.DnsName != null)
+                    {
+                        filter ??= new CertificateFilterInfo();
+                        filter.DnsName = new WildcardPattern(dp.DnsName, WildcardOptions.IgnoreCase);
+                    }
+
+                    if (dp.Eku != null)
+                    {
+                        filter ??= new CertificateFilterInfo();
+                        filter.Eku = new List<WildcardPattern>();
+                        foreach (var pattern in dp.Eku)
+                        {
+                            filter.Eku.Add(new WildcardPattern(pattern, WildcardOptions.IgnoreCase));
+                        }
+                    }
+
+                    if (dp.ExpiringInDays >= 0)
+                    {
+                        filter ??= new CertificateFilterInfo();
+                        filter.Expiring = DateTime.Now.AddDays(dp.ExpiringInDays);
+                    }
+
+                    if (dp.SSLServerAuthentication)
+                    {
+                        filter ??= new CertificateFilterInfo();
+                        filter.SSLServerAuthentication = true;
                     }
                 }
             }
@@ -2633,42 +2719,131 @@ namespace Microsoft.PowerShell.Commands
             return includeArchivedCerts;
         }
 
-        // If it's Win8 or above, filter matching for certain properties is done by
-        // the certificate enumeration filter at the API level. In that case,
-        // filter.Purpose will be 'None' and MatchesFilter will return 'True'.
-        private static bool MatchesFilter(X509Certificate2 cert,
-                                   CertificateFilterInfo filter)
+        private static bool MatchesFilter(X509Certificate2 cert, CertificateFilterInfo filter)
         {
-            //
-            // no filter means, match everything
-            //
-            if ((filter == null) ||
-                (filter.Purpose == CertificatePurpose.NotSpecified) ||
-                (filter.Purpose == CertificatePurpose.All))
+            // No filter means, match everything
+            if (filter == null)
             {
                 return true;
+            }
+
+            if (filter.Expiring > DateTime.MinValue && !SecuritySupport.CertExpiresByTime(cert, filter.Expiring))
+            {
+                return false;
+            }
+
+            if (filter.DnsName != null && !CertContainsName(cert, filter.DnsName))
+            {
+                return false;
+            }
+
+            if (filter.Eku != null && !CertContainsEku(cert, filter.Eku))
+            {
+                return false;
+            }
+
+            if (filter.SSLServerAuthentication && !CertIsSSLServerAuthentication(cert))
+            {
+                return false;
             }
 
             switch (filter.Purpose)
             {
                 case CertificatePurpose.CodeSigning:
-                    if (SecuritySupport.CertIsGoodForSigning(cert))
-                    {
-                        return true;
-                    }
-
-                    break;
+                    return SecuritySupport.CertIsGoodForSigning(cert);
 
                 case CertificatePurpose.DocumentEncryption:
-                    if (SecuritySupport.CertIsGoodForEncryption(cert))
-                    {
-                        return true;
-                    }
+                    return SecuritySupport.CertIsGoodForEncryption(cert);
 
-                    break;
+                case CertificatePurpose.NotSpecified:
+                case CertificatePurpose.All:
+                    return true;
 
                 default:
                     break;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Check if the specified certificate has the name in DNS name list.
+        /// </summary>
+        /// <param name="cert">Certificate object.</param>
+        /// <param name="pattern">Wildcard pattern for DNS name to search.</param>
+        /// <returns>True on success, false otherwise.</returns>
+        internal static bool CertContainsName(X509Certificate2 cert, WildcardPattern pattern)
+        {
+            List<DnsNameRepresentation> list = (new DnsNameProperty(cert)).DnsNameList;
+            foreach (DnsNameRepresentation dnsName in list)
+            {
+                if (pattern.IsMatch(dnsName.Unicode))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Check if the specified certificate is a server authentication certificate.
+        /// </summary>
+        /// <param name="cert">Certificate object.</param>
+        /// <returns>True on success, false otherwise.</returns>
+        internal static bool CertIsSSLServerAuthentication(X509Certificate2 cert)
+        {
+            X509ExtensionCollection extentionList = cert.Extensions;
+            foreach (var extension in extentionList)
+            {
+                if (extension is X509EnhancedKeyUsageExtension eku)
+                {
+                    foreach (Oid usage in eku.EnhancedKeyUsages)
+                    {
+                        if (usage.Value.Equals(CertificateFilterInfo.OID_PKIX_KP_SERVER_AUTH, StringComparison.Ordinal))
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Check if the specified certificate contains EKU matching all of these patterns.
+        /// </summary>
+        /// <param name="cert">Certificate object.</param>
+        /// <param name="ekuPatterns">EKU patterns.</param>
+        /// <returns>True on success, false otherwise.</returns>
+        internal static bool CertContainsEku(X509Certificate2 cert, List<WildcardPattern> ekuPatterns)
+        {
+            X509ExtensionCollection extensionList = cert.Extensions;
+            foreach (var extension in extensionList)
+            {
+                if (extension is X509EnhancedKeyUsageExtension eku)
+                {
+                    OidCollection enhancedKeyUsages = eku.EnhancedKeyUsages;
+                    foreach (WildcardPattern ekuPattern in ekuPatterns)
+                    {
+                        bool patternPassed = false;
+                        foreach (var usage in enhancedKeyUsages)
+                        {
+                            if (ekuPattern.IsMatch(usage.Value) || ekuPattern.IsMatch(usage.FriendlyName))
+                            {
+                                return true;
+                            }
+                        }
+
+                        if (!patternPassed)
+                        {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                }
             }
 
             return false;
@@ -2893,17 +3068,16 @@ namespace Microsoft.PowerShell.Commands
         /// <summary>
         /// Localized friendly name of EKU.
         /// </summary>
-        private string _friendlyName;
+        private readonly string _friendlyName;
 
         /// <summary>
         /// OID of EKU.
         /// </summary>
-        private string _oid;
+        private readonly string _oid;
 
         /// <summary>
         /// Constructor of an EnhancedKeyUsageRepresentation.
         /// </summary>
-
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Oid")]
 
         public EnhancedKeyUsageRepresentation(string inputFriendlyName, string inputOid)
@@ -2972,14 +3146,12 @@ namespace Microsoft.PowerShell.Commands
     /// <summary>
     /// Class for SendAsTrustedIssuer.
     /// </summary>
-
     [SuppressMessage("Microsoft.Design", "CA1053:StaticHolderTypesShouldNotHaveConstructors")]
     public sealed class SendAsTrustedIssuerProperty
     {
         /// <summary>
         /// Get property of SendAsTrustedIssuer.
         /// </summary>
-
         [SuppressMessage("Microsoft.Design", "CA1011:ConsiderPassingBaseTypesAsParameters")]
         public static bool ReadSendAsTrustedIssuerProperty(X509Certificate2 cert)
         {
@@ -3015,7 +3187,6 @@ namespace Microsoft.PowerShell.Commands
         /// <summary>
         /// Set property of SendAsTrustedIssuer.
         /// </summary>
-
         [SuppressMessage("Microsoft.Design", "CA1011:ConsiderPassingBaseTypesAsParameters")]
         public static void WriteSendAsTrustedIssuerProperty(X509Certificate2 cert, string certPath, bool addProperty)
         {
@@ -3088,11 +3259,12 @@ namespace Microsoft.PowerShell.Commands
             }
             else
             {
-                throw Marshal.GetExceptionForHR(Security.NativeMethods.NTE_NOT_SUPPORTED);
+                Marshal.ThrowExceptionForHR(Security.NativeMethods.NTE_NOT_SUPPORTED);
             }
         }
 
         private static readonly char[] s_separators = new char[] { '/', '\\' };
+
         private static string[] GetPathElements(string path)
         {
             string[] allElts = path.Split(s_separators);
@@ -3128,10 +3300,9 @@ namespace Microsoft.PowerShell.Commands
     /// <summary>
     /// Class for ekulist.
     /// </summary>
-
     public sealed class EnhancedKeyUsageProperty
     {
-        private List<EnhancedKeyUsageRepresentation> _ekuList = new List<EnhancedKeyUsageRepresentation>();
+        private readonly List<EnhancedKeyUsageRepresentation> _ekuList = new List<EnhancedKeyUsageRepresentation>();
 
         /// <summary>
         /// Get property of EKUList.
@@ -3172,11 +3343,11 @@ namespace Microsoft.PowerShell.Commands
     /// <summary>
     /// Class for DNSNameList.
     /// </summary>
-
     public sealed class DnsNameProperty
     {
-        private List<DnsNameRepresentation> _dnsList = new List<DnsNameRepresentation>();
-        private System.Globalization.IdnMapping idnMapping = new System.Globalization.IdnMapping();
+        private readonly List<DnsNameRepresentation> _dnsList = new List<DnsNameRepresentation>();
+        private readonly System.Globalization.IdnMapping idnMapping = new System.Globalization.IdnMapping();
+
         private const string dnsNamePrefix = "DNS Name=";
         private const string distinguishedNamePrefix = "CN=";
 
@@ -3192,7 +3363,7 @@ namespace Microsoft.PowerShell.Commands
         }
 
         /// <summary>
-        /// Constructor for EkuList.
+        /// Constructor for DnsNameProperty.
         /// </summary>
         public DnsNameProperty(X509Certificate2 cert)
         {
@@ -3381,9 +3552,9 @@ namespace Microsoft.PowerShell.Commands
         /// Lock that guards access to the following static members
         /// -- storeNames.
         /// </summary>
-        private static object s_staticLock = new object();
+        private static readonly object s_staticLock = new object();
 
-        internal static List<string> storeNames = new List<string>();
+        internal static readonly List<string> storeNames = new List<string>();
 
         /// <summary>
         /// Get a list of store names at the specified location.

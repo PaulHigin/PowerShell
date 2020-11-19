@@ -1,37 +1,25 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Collections.Specialized;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.IO;
 using System.Management.Automation;
-using System.Management.Automation.Runspaces;
-using System.Net;
-using System.Reflection;
 using System.Resources;
-using System.Security;
-using System.Security.Principal;
-using System.Text;
 using System.Threading;
-using System.Xml;
-
+using Microsoft.Powershell.Commands.GetCounter.PdhNative;
 using Microsoft.PowerShell.Commands.Diagnostics.Common;
 using Microsoft.PowerShell.Commands.GetCounter;
-using Microsoft.Powershell.Commands.GetCounter.PdhNative;
 
 namespace Microsoft.PowerShell.Commands
 {
     ///
     /// Class that implements the Get-Counter cmdlet.
     ///
-    [Cmdlet(VerbsCommon.Get, "Counter", DefaultParameterSetName = "GetCounterSet", HelpUri = "https://go.microsoft.com/fwlink/?LinkID=138335")]
+    [Cmdlet(VerbsCommon.Get, "Counter", DefaultParameterSetName = "GetCounterSet", HelpUri = "https://go.microsoft.com/fwlink/?LinkID=2109647")]
     public sealed class GetCounterCommand : PSCmdlet
     {
         //
@@ -90,9 +78,10 @@ namespace Microsoft.PowerShell.Commands
                                  @"\memory\cache faults/sec",
                                  @"\physicaldisk(_total)\% disk time",
                                  @"\physicaldisk(_total)\current disk queue length"};
+
         private bool _defaultCounters = true;
 
-        private List<string> _accumulatedCounters = new List<string>();
+        private readonly List<string> _accumulatedCounters = new List<string>();
 
         //
         // SampleInterval parameter.
@@ -117,6 +106,7 @@ namespace Microsoft.PowerShell.Commands
         // MaxSamples parameter
         //
         private const Int64 KEEP_ON_SAMPLING = -1;
+
         [Parameter(
                 ParameterSetName = "GetCounterSet",
                 ValueFromPipeline = false,
@@ -178,7 +168,7 @@ namespace Microsoft.PowerShell.Commands
 
         private PdhHelper _pdhHelper = null;
 
-        private EventWaitHandle _cancelEventArrived = new EventWaitHandle(false, EventResetMode.ManualReset);
+        private readonly EventWaitHandle _cancelEventArrived = new EventWaitHandle(false, EventResetMode.ManualReset);
 
         // Culture identifier(s)
         private const string FrenchCultureId = "fr-FR";
@@ -210,24 +200,17 @@ namespace Microsoft.PowerShell.Commands
         //
         protected override void BeginProcessing()
         {
-
-#if CORECLR
             if (Platform.IsIoT)
             {
                 // IoT does not have the '$env:windir\System32\pdh.dll' assembly which is required by this cmdlet.
                 throw new PlatformNotSupportedException();
             }
 
-            // PowerShell 7 requires at least Windows 7,
-            // so no version test is needed
-            _pdhHelper = new PdhHelper(false);
-#else
-            _pdhHelper = new PdhHelper(System.Environment.OSVersion.Version.Major < 6);
-#endif
+            _pdhHelper = new PdhHelper();
             _resourceMgr = Microsoft.PowerShell.Commands.Diagnostics.Common.CommonUtilities.GetResourceManager();
 
             uint res = _pdhHelper.ConnectToDataSource();
-            if (res != 0)
+            if (res != PdhResults.PDH_CSTATUS_VALID_DATA)
             {
                 ReportPdhError(res, true);
                 return;
@@ -281,7 +264,7 @@ namespace Microsoft.PowerShell.Commands
                         break;
 
                     default:
-                        Debug.Assert(false, string.Format(CultureInfo.InvariantCulture, "Invalid parameter set name: {0}", ParameterSetName));
+                        Debug.Fail(string.Format(CultureInfo.InvariantCulture, "Invalid parameter set name: {0}", ParameterSetName));
                         break;
                 }
             }
@@ -324,7 +307,7 @@ namespace Microsoft.PowerShell.Commands
         {
             StringCollection counterSets = new StringCollection();
             uint res = _pdhHelper.EnumObjects(machine, ref counterSets);
-            if (res != 0)
+            if (res != PdhResults.PDH_CSTATUS_VALID_DATA)
             {
                 // add an error message
                 string msg = string.Format(CultureInfo.InvariantCulture, _resourceMgr.GetString("NoCounterSetsOnComputer"), machine, res);
@@ -372,7 +355,7 @@ namespace Microsoft.PowerShell.Commands
                         WriteError(new ErrorRecord(exc, "CounterSetEnumAccessDenied", ErrorCategory.InvalidResult, null));
                         continue;
                     }
-                    else if (res != 0)
+                    else if (res != PdhResults.PDH_CSTATUS_VALID_DATA)
                     {
                         ReportPdhError(res, false);
                         continue;
@@ -397,10 +380,7 @@ namespace Microsoft.PowerShell.Commands
                     Dictionary<string, string[]> counterInstanceMapping = new Dictionary<string, string[]>();
                     foreach (string counter in counterSetCounters)
                     {
-                        if (!counterInstanceMapping.ContainsKey(counter))
-                        {
-                            counterInstanceMapping.Add(counter, instanceArray);
-                        }
+                        counterInstanceMapping.TryAdd(counter, instanceArray);
                     }
 
                     PerformanceCounterCategoryType categoryType = PerformanceCounterCategoryType.Unknown;
@@ -445,7 +425,6 @@ namespace Microsoft.PowerShell.Commands
             CultureInfo culture = GetCurrentCulture();
             List<Tuple<char, char>> characterReplacementList = null;
             List<string> paths = CombineMachinesAndCounterPaths();
-            uint res = 0;
 
             if (!_defaultCounters)
             {
@@ -453,13 +432,14 @@ namespace Microsoft.PowerShell.Commands
             }
 
             StringCollection allExpandedPaths = new StringCollection();
+            uint res;
             foreach (string path in paths)
             {
                 string localizedPath = path;
                 if (_defaultCounters)
                 {
                     res = _pdhHelper.TranslateLocalCounterPath(path, out localizedPath);
-                    if (res != 0)
+                    if (res != PdhResults.PDH_CSTATUS_VALID_DATA)
                     {
                         string msg = string.Format(CultureInfo.CurrentCulture, _resourceMgr.GetString("CounterPathTranslationFailed"), res);
                         Exception exc = new Exception(msg);
@@ -478,7 +458,7 @@ namespace Microsoft.PowerShell.Commands
 
                 StringCollection expandedPaths;
                 res = _pdhHelper.ExpandWildCardPath(localizedPath, out expandedPaths);
-                if (res != 0)
+                if (res != PdhResults.PDH_CSTATUS_VALID_DATA)
                 {
                     WriteDebug("Could not expand path " + localizedPath);
                     ReportPdhError(res, false);
@@ -506,13 +486,13 @@ namespace Microsoft.PowerShell.Commands
             }
 
             res = _pdhHelper.OpenQuery();
-            if (res != 0)
+            if (res != PdhResults.PDH_CSTATUS_VALID_DATA)
             {
                 ReportPdhError(res, false);
             }
 
             res = _pdhHelper.AddCounters(ref allExpandedPaths, true);
-            if (res != 0)
+            if (res != PdhResults.PDH_CSTATUS_VALID_DATA)
             {
                 ReportPdhError(res, true);
 
@@ -534,7 +514,7 @@ namespace Microsoft.PowerShell.Commands
                 // read the first set just to get the initial values
                 res = _pdhHelper.ReadNextSet(out nextSet, bSkip);
 
-                if (res == 0)
+                if (res == PdhResults.PDH_CSTATUS_VALID_DATA)
                 {
                     // Display valid data
                     if (!bSkip)
@@ -570,12 +550,7 @@ namespace Microsoft.PowerShell.Commands
                     break;
                 }
 
-#if CORECLR
-                // CoreCLR has no overload of WaitOne with (interval, exitContext)
-                bool cancelled = _cancelEventArrived.WaitOne((int)_sampleInterval * 1000);
-#else
                 bool cancelled = _cancelEventArrived.WaitOne((int)_sampleInterval * 1000, true);
-#endif
                 if (cancelled)
                 {
                     break;
@@ -666,12 +641,7 @@ namespace Microsoft.PowerShell.Commands
 
         private static CultureInfo GetCurrentCulture()
         {
-#if CORECLR
-            return CultureInfo.CurrentCulture;
-#else
             return Thread.CurrentThread.CurrentUICulture;
-#endif
         }
     }
 }
-

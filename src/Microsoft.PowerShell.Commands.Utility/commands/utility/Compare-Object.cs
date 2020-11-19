@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -12,7 +12,7 @@ namespace Microsoft.PowerShell.Commands
 {
     /// <summary>
     /// </summary>
-    [Cmdlet(VerbsData.Compare, "Object", HelpUri = "https://go.microsoft.com/fwlink/?LinkID=113286",
+    [Cmdlet(VerbsData.Compare, "Object", HelpUri = "https://go.microsoft.com/fwlink/?LinkID=2096605",
         RemotingCapability = RemotingCapability.None)]
     public sealed class CompareObjectCommand : ObjectCmdletBase
     {
@@ -99,10 +99,13 @@ namespace Microsoft.PowerShell.Commands
 
         #region Internal
         private List<OrderByPropertyEntry> _referenceEntries;
+
         private readonly List<OrderByPropertyEntry> _referenceEntryBacklog
             = new List<OrderByPropertyEntry>();
+
         private readonly List<OrderByPropertyEntry> _differenceEntryBacklog
             = new List<OrderByPropertyEntry>();
+
         private OrderByProperty _orderByProperty = null;
         private OrderByPropertyComparer _comparer = null;
 
@@ -165,7 +168,7 @@ namespace Microsoft.PowerShell.Commands
             // 2005/07/19 Switched order of referenceEntry and differenceEntry
             //   so that we cast differenceEntry to the type of referenceEntry.
             if (referenceEntry != null && differenceEntry != null &&
-                0 == _comparer.Compare(referenceEntry, differenceEntry))
+                _comparer.Compare(referenceEntry, differenceEntry) == 0)
             {
                 EmitMatch(referenceEntry);
                 return;
@@ -281,7 +284,7 @@ namespace Microsoft.PowerShell.Commands
             {
                 OrderByPropertyEntry listEntry = list[i];
                 Diagnostics.Assert(listEntry != null, "null listEntry " + i);
-                if (0 == _comparer.Compare(match, listEntry))
+                if (_comparer.Compare(match, listEntry) == 0)
                 {
                     list.RemoveAt(i);
                     return listEntry;
@@ -322,7 +325,7 @@ namespace Microsoft.PowerShell.Commands
             else
             {
                 mshobj = new PSObject();
-                if (Property == null || 0 == Property.Length)
+                if (Property == null || Property.Length == 0)
                 {
                     PSNoteProperty inputNote = new PSNoteProperty(
                         InputObjectPropertyName, entry.inputObject);
@@ -372,18 +375,13 @@ namespace Microsoft.PowerShell.Commands
         #region Overrides
 
         /// <summary>
-        /// If the parameter 'ExcludeDifferent' is present, then we need to turn on the
-        /// 'IncludeEqual' switch unless it's turned off by the user specifically.
+        /// If the parameter 'ExcludeDifferent' is present, then the 'IncludeEqual'
+        /// switch is turned on unless it's turned off by the user specifically.
         /// </summary>
         protected override void BeginProcessing()
         {
             if (ExcludeDifferent)
             {
-                if (_isIncludeEqualSpecified == false)
-                {
-                    return;
-                }
-
                 if (_isIncludeEqualSpecified && !_includeEqual)
                 {
                     return;

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System.Management.Automation.Host;
@@ -37,7 +37,7 @@ namespace System.Management.Automation
         {
             if (context == null)
             {
-                throw new ArgumentNullException("context");
+                throw new ArgumentNullException(nameof(context));
             }
 
             _context = context;
@@ -108,10 +108,9 @@ namespace System.Management.Automation
 
         #region private data
 
-        private ExecutionContext _context;
-        private PSHost _host;
+        private readonly ExecutionContext _context;
+        private readonly PSHost _host;
         private CommandInvocationIntrinsics _invokeCommand;
         #endregion private data
     }
 }
-

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -30,6 +30,11 @@ namespace Microsoft.PowerShell
     internal partial class ConsoleHostUserInterface : System.Management.Automation.Host.PSHostUserInterface
     {
         /// <summary>
+        /// This is the char that is echoed to the console when the input is masked. This not localizable.
+        /// </summary>
+        private const char PrintToken = '*';
+
+        /// <summary>
         /// Command completion implementation object.
         /// </summary>
         private PowerShell _commandCompletionPowerShell;
@@ -37,7 +42,7 @@ namespace Microsoft.PowerShell
         /// <summary>
         /// This is a test hook for programmatically reading and writing ConsoleHost I/O.
         /// </summary>
-        private static PSHostUserInterface s_h = null;
+        private static readonly PSHostUserInterface s_h = null;
 
         /// <summary>
         /// Return true if the console supports a VT100 like virtual terminal.
@@ -49,7 +54,6 @@ namespace Microsoft.PowerShell
         /// </summary>
         /// <param name="parent"></param>
         /// <exception/>
-
         internal ConsoleHostUserInterface(ConsoleHost parent)
         {
             Dbg.Assert(parent != null, "parent may not be null");
@@ -88,7 +92,6 @@ namespace Microsoft.PowerShell
         /// </summary>
         /// <value></value>
         /// <exception/>
-
         public override PSHostRawUserInterface RawUI
         {
             get
@@ -126,7 +129,6 @@ namespace Microsoft.PowerShell
         /// <summary>
         /// True if command completion is currently running.
         /// </summary>
-
         internal bool IsCommandCompletionRunning
         {
             get
@@ -139,13 +141,11 @@ namespace Microsoft.PowerShell
         /// <summary>
         /// True if the Read* functions should read from the stdin stream instead of from the win32 console.
         /// </summary>
-
         internal bool ReadFromStdin { get; set; }
 
         /// <summary>
         /// True if the host shouldn't write out prompts.
         /// </summary>
-
         internal bool NoPrompt { get; set; }
 
         #region Line-oriented interaction
@@ -163,7 +163,6 @@ namespace Microsoft.PowerShell
         ///    OR
         ///    Win32's SetConsoleCursorPosition failed
         /// </exception>
-
         public override string ReadLine()
         {
             HandleThrowOnReadAndPrompt();
@@ -188,19 +187,16 @@ namespace Microsoft.PowerShell
         /// <exception cref="PipelineStoppedException">
         /// If Ctrl-C is entered by user
         /// </exception>
-
         public override SecureString ReadLineAsSecureString()
         {
             HandleThrowOnReadAndPrompt();
-
-            const char printToken = '*'; // This is not localizable
 
             // we lock here so that multiple threads won't interleave the various reads and writes here.
 
             object result = null;
             lock (_instanceLock)
             {
-                result = ReadLineSafe(true, printToken);
+                result = ReadLineSafe(true, PrintToken);
             }
 
             SecureString secureResult = result as SecureString;
@@ -242,7 +238,6 @@ namespace Microsoft.PowerShell
         /// <exception cref="PipelineStoppedException">
         /// If Ctrl-C is entered by user
         /// </exception>
-
         private object ReadLineSafe(bool isSecureString, char? printToken)
         {
             // Don't lock (instanceLock) in here -- the caller needs to do that...
@@ -299,7 +294,7 @@ namespace Microsoft.PowerShell
 
                 Coordinates originalCursorPos = _rawui.CursorPosition;
 
-                do
+                while (true)
                 {
                     //
                     // read one char at a time so that we don't
@@ -310,7 +305,9 @@ namespace Microsoft.PowerShell
                     ConsoleKeyInfo keyInfo = Console.ReadKey(true);
 #else
                     const int CharactersToRead = 1;
+#pragma warning disable CA2014
                     Span<char> inputBuffer = stackalloc char[CharactersToRead + 1];
+#pragma warning restore CA2014
                     string key = ConsoleControl.ReadConsole(handle, initialContentLength: 0, inputBuffer, charactersToRead: CharactersToRead, endOnTab: false, out _);
 #endif
 
@@ -358,7 +355,7 @@ namespace Microsoft.PowerShell
 #if UNIX
                     else if (char.IsControl(keyInfo.KeyChar))
                     {
-                        // blacklist control characters
+                        // deny list control characters
                         continue;
                     }
 #endif
@@ -390,7 +387,6 @@ namespace Microsoft.PowerShell
                         }
                     }
                 }
-                while (true);
             }
 #if UNIX
             catch (InvalidOperationException)
@@ -437,7 +433,6 @@ namespace Microsoft.PowerShell
         ///    OR
         ///    Win32's SetConsoleCursorPosition failed
         /// </exception>
-
         private void WritePrintToken(
             string printToken,
             ref Coordinates originalCursorPosition)
@@ -474,7 +469,6 @@ namespace Microsoft.PowerShell
         ///    OR
         ///    Win32's SetConsoleCursorPosition failed
         /// </exception>
-
         private void WriteBackSpace(Coordinates originalCursorPosition)
         {
             Coordinates cursorPosition = _rawui.CursorPosition;
@@ -603,7 +597,7 @@ namespace Microsoft.PowerShell
 
         private void WriteToConsole(ConsoleColor foregroundColor, ConsoleColor backgroundColor, string text, bool newLine = false)
         {
-            // Sync access so that we don't race on color settings if called from multiple threads.
+            // Sync access so that we don't conflict on color settings if called from multiple threads.
             lock (_instanceLock)
             {
                 ConsoleColor fg = RawUI.ForegroundColor;
@@ -676,7 +670,6 @@ namespace Microsoft.PowerShell
         ///    OR
         ///    Win32's WriteConsole fails
         /// </exception>
-
         public override void Write(string value)
         {
             WriteImpl(value, newLine: false);
@@ -747,7 +740,6 @@ namespace Microsoft.PowerShell
         ///    OR
         ///    Win32's WriteConsole fails
         /// </exception>
-
         public override void Write(ConsoleColor foregroundColor, ConsoleColor backgroundColor, string value)
         {
             Write(foregroundColor, backgroundColor, value, newLine: false);
@@ -779,7 +771,7 @@ namespace Microsoft.PowerShell
 
         private void Write(ConsoleColor foregroundColor, ConsoleColor backgroundColor, string value, bool newLine)
         {
-            // Sync access so that we don't race on color settings if called from multiple threads.
+            // Sync access so that we don't conflict on color settings if called from multiple threads.
             lock (_instanceLock)
             {
                 ConsoleColor fg = RawUI.ForegroundColor;
@@ -859,7 +851,6 @@ namespace Microsoft.PowerShell
         /// A list of strings representing the text broken into "lines" each of which are guaranteed not to exceed
         /// maxWidthInBufferCells.
         /// </returns>
-
         internal List<string> WrapText(string text, int maxWidthInBufferCells)
         {
             List<string> result = new List<string>();
@@ -951,7 +942,6 @@ namespace Microsoft.PowerShell
         /// <summary>
         /// Struct used by WrapText.
         /// </summary>
-
         [Flags]
         internal enum WordFlags
         {
@@ -986,7 +976,6 @@ namespace Microsoft.PowerShell
         /// This can be made faster by, instead of creating little strings for each word, creating indices of the start and end
         /// range of a word.  That would reduce the string allocations.
         /// </remarks>
-
         internal List<Word> ChopTextIntoWords(string text, int maxWidthInBufferCells)
         {
             List<Word> result = new List<Word>();
@@ -1094,7 +1083,6 @@ namespace Microsoft.PowerShell
         /// <param name="result">
         /// The list into which the words will be added.
         /// </param>
-
         internal void AddWord(string text, int startIndex, int endIndex,
             int maxWidthInBufferCells, bool isWhitespace, ref List<Word> result)
         {
@@ -1113,7 +1101,7 @@ namespace Microsoft.PowerShell
                     w.Flags = WordFlags.IsWhitespace;
                 }
 
-                do
+                while (true)
                 {
                     w.Text = text.Substring(startIndex, i - startIndex);
                     w.CellCount = RawUI.LengthInBufferCells(w.Text);
@@ -1129,7 +1117,7 @@ namespace Microsoft.PowerShell
 
                         --i;
                     }
-                } while (true);
+                }
 
                 Dbg.Assert(RawUI.LengthInBufferCells(w.Text) <= maxWidthInBufferCells, "word should not exceed max");
                 result.Add(w);
@@ -1233,7 +1221,6 @@ namespace Microsoft.PowerShell
         ///    OR
         ///    Win32's WriteConsole fails
         /// </exception>
-
         public override void WriteVerboseLine(string message)
         {
             // don't lock here as WriteLine is already protected.
@@ -1271,7 +1258,6 @@ namespace Microsoft.PowerShell
         ///    OR
         ///    Win32's WriteConsole fails
         /// </exception>
-
         public override void WriteWarningLine(string message)
         {
             // don't lock here as WriteLine is already protected.
@@ -1295,7 +1281,6 @@ namespace Microsoft.PowerShell
         /// <summary>
         /// Invoked by CommandBase.WriteProgress to display a progress record.
         /// </summary>
-
         public override void WriteProgress(Int64 sourceId, ProgressRecord record)
         {
             if (record == null)
@@ -1355,7 +1340,11 @@ namespace Microsoft.PowerShell
             }
         }
 
+        // Format colors
+        public ConsoleColor FormatAccentColor { get; set; } = ConsoleColor.Green;
+
         // Error colors
+        public ConsoleColor ErrorAccentColor { get; set; } = ConsoleColor.Cyan;
         public ConsoleColor ErrorForegroundColor { get; set; } = ConsoleColor.Red;
         public ConsoleColor ErrorBackgroundColor { get; set; } = Console.BackgroundColor;
 
@@ -1372,8 +1361,8 @@ namespace Microsoft.PowerShell
         public ConsoleColor VerboseBackgroundColor { get; set; } = Console.BackgroundColor;
 
         // Progress colors
-        public ConsoleColor ProgressForegroundColor { get; set; } = ConsoleColor.Yellow;
-        public ConsoleColor ProgressBackgroundColor { get; set; } = ConsoleColor.DarkCyan;
+        public ConsoleColor ProgressForegroundColor { get; set; } = ConsoleColor.Black;
+        public ConsoleColor ProgressBackgroundColor { get; set; } = ConsoleColor.Yellow;
 
         #endregion Line-oriented interaction
 
@@ -1381,7 +1370,8 @@ namespace Microsoft.PowerShell
 
         // We use System.Environment.NewLine because we are platform-agnostic
 
-        internal static string Crlf = System.Environment.NewLine;
+        internal static readonly string Crlf = System.Environment.NewLine;
+
         private const string Tab = "\x0009";
 
         internal enum ReadLineResult
@@ -1429,7 +1419,6 @@ namespace Microsoft.PowerShell
         ///    OR
         ///    Win32's SetConsoleCursorPosition failed
         /// </exception>
-
         internal string ReadLine(bool endOnTab, string initialContent, out ReadLineResult result, bool calledFromPipeline, bool transcribeResult)
         {
             result = ReadLineResult.endedOnEnter;
@@ -1580,7 +1569,7 @@ namespace Microsoft.PowerShell
             }
 
 #endif
-            do
+            while (true)
             {
 #if UNIX
                     keyInfo = Console.ReadKey(true);
@@ -1781,7 +1770,7 @@ namespace Microsoft.PowerShell
 
                     if (char.IsControl(keyInfo.KeyChar))
                     {
-                        // blacklist control characters
+                        // deny list control characters
                         continue;
                     }
 
@@ -1807,7 +1796,6 @@ namespace Microsoft.PowerShell
                     Console.CursorLeft = cursorCurrent + 1;
 #endif
             }
-            while (true);
 
             Dbg.Assert(
                        (s == null && result == ReadLineResult.endedOnBreak)
@@ -1861,8 +1849,11 @@ namespace Microsoft.PowerShell
         /// <returns>The string with any \0 characters removed...</returns>
         private string RemoveNulls(string input)
         {
-            if (input.IndexOf('\0') == -1)
+            if (input.Contains('\0'))
+            {
                 return input;
+            }
+
             StringBuilder sb = new StringBuilder();
             foreach (char c in input)
             {
@@ -1905,7 +1896,7 @@ namespace Microsoft.PowerShell
             string completionInput = null;
 #endif
 
-            do
+            while (true)
             {
                 if (TryInvokeUserDefinedReadLine(out input))
                 {
@@ -2037,7 +2028,6 @@ namespace Microsoft.PowerShell
                 }
 #endif
             }
-            while (true);
 
             // Since we did not transcribe any call to ReadLine, transcribe the results here.
 
@@ -2122,6 +2112,7 @@ namespace Microsoft.PowerShell
         }
 
         private const string CustomReadlineCommand = "PSConsoleHostReadLine";
+
         private bool TryInvokeUserDefinedReadLine(out string input)
         {
             // We're using GetCommands instead of GetCommand so we don't auto-load a module should the command exist, but isn't loaded.
@@ -2167,7 +2158,7 @@ namespace Microsoft.PowerShell
 
         // used to serialize access to instance data
 
-        private object _instanceLock = new object();
+        private readonly object _instanceLock = new object();
 
         // If this is true, class throws on read or prompt method which require
         // access to console.
@@ -2191,16 +2182,14 @@ namespace Microsoft.PowerShell
 
         // this is a test hook for the ConsoleInteractiveTestTool, which sets this field to true.
 
-        private bool _isInteractiveTestToolListening;
+        private readonly bool _isInteractiveTestToolListening;
 
         // This instance data is "read-only" and need not have access serialized.
 
-        private ConsoleHostRawUserInterface _rawui;
-        private ConsoleHost _parent;
+        private readonly ConsoleHostRawUserInterface _rawui;
+        private readonly ConsoleHost _parent;
 
         [TraceSourceAttribute("ConsoleHostUserInterface", "Console host's subclass of S.M.A.Host.Console")]
-        private static
-        PSTraceSource s_tracer = PSTraceSource.GetTracer("ConsoleHostUserInterface", "Console host's subclass of S.M.A.Host.Console");
+        private static readonly PSTraceSource s_tracer = PSTraceSource.GetTracer("ConsoleHostUserInterface", "Console host's subclass of S.M.A.Host.Console");
     }
 }   // namespace
-

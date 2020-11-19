@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
@@ -112,7 +112,7 @@ namespace System.Management.Automation
 
             if (name == null)
             {
-                throw new ArgumentNullException("name");
+                throw new ArgumentNullException(nameof(name));
             }
 
             Name = name;
@@ -287,7 +287,7 @@ namespace System.Management.Automation
         {
             if (string.IsNullOrEmpty(newName))
             {
-                throw new ArgumentNullException("newName");
+                throw new ArgumentNullException(nameof(newName));
             }
 
             Name = newName;
@@ -437,8 +437,11 @@ namespace System.Management.Automation
                 // that can mess up the runspace our CommandInfo object came from.
 
                 var runspace = (RunspaceBase)_context.CurrentRunspace;
-                if (!runspace.RunActionIfNoRunningPipelinesWithThreadCheck(
-                        () => GetMergedCommandParameterMetadata(out result)))
+                if (runspace.CanRunActionInCurrentPipeline())
+                {
+                    GetMergedCommandParameterMetadata(out result);
+                }
+                else
                 {
                     _context.Events.SubscribeEvent(
                             source: null,
@@ -797,7 +800,7 @@ namespace System.Management.Automation
         {
             if (typeDefinitionAst == null)
             {
-                throw PSTraceSource.NewArgumentNullException("typeDefinitionAst");
+                throw PSTraceSource.NewArgumentNullException(nameof(typeDefinitionAst));
             }
 
             TypeDefinitionAst = typeDefinitionAst;
@@ -811,7 +814,7 @@ namespace System.Management.Automation
         {
             if (typeName == null)
             {
-                throw PSTraceSource.NewArgumentNullException("typeName");
+                throw PSTraceSource.NewArgumentNullException(nameof(typeName));
             }
 
             _type = typeName.GetReflectionType();
@@ -886,7 +889,7 @@ namespace System.Management.Automation
         /// <summary>
         /// When a type is defined by PowerShell, the ast for that type.
         /// </summary>
-        public TypeDefinitionAst TypeDefinitionAst { get; private set; }
+        public TypeDefinitionAst TypeDefinitionAst { get; }
 
         private bool _typeWasCalculated;
 
@@ -978,7 +981,7 @@ namespace System.Management.Automation
             {
                 if (!IsPSTypeName(m))
                 {
-                    builder.Append(m.Name).Append(":");
+                    builder.Append(m.Name).Append(':');
                 }
             }
 

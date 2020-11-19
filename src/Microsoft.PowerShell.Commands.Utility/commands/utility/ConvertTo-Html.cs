@@ -1,10 +1,9 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Diagnostics.CodeAnalysis;
 using System.Management.Automation;
 using System.Management.Automation.Internal;
@@ -18,9 +17,8 @@ namespace Microsoft.PowerShell.Commands
     /// <summary>
     /// Class comment.
     /// </summary>
-
     [Cmdlet(VerbsData.ConvertTo, "Html", DefaultParameterSetName = "Page",
-        HelpUri = "https://go.microsoft.com/fwlink/?LinkID=113290", RemotingCapability = RemotingCapability.None)]
+        HelpUri = "https://go.microsoft.com/fwlink/?LinkID=2096595", RemotingCapability = RemotingCapability.None)]
     public sealed
     class ConvertToHtmlCommand : PSCmdlet
     {
@@ -359,7 +357,7 @@ namespace Microsoft.PowerShell.Commands
         private void InitializeResolvedNameMshParameters()
         {
             // temp list of properties with wildcards resolved
-            ArrayList resolvedNameProperty = new ArrayList();
+            var resolvedNameProperty = new List<object>();
 
             foreach (MshParameter p in _propertyMshParameterList)
             {
@@ -562,7 +560,7 @@ namespace Microsoft.PowerShell.Commands
                 {
                     COLTag.Append(" width = \"");
                     COLTag.Append(width);
-                    COLTag.Append("\"");
+                    COLTag.Append('"');
                 }
 
                 string alignment = p.GetEntry(ConvertHTMLParameterDefinitionKeys.AlignmentEntryKey) as string;
@@ -570,7 +568,7 @@ namespace Microsoft.PowerShell.Commands
                 {
                     COLTag.Append(" align = \"");
                     COLTag.Append(alignment);
-                    COLTag.Append("\"");
+                    COLTag.Append('"');
                 }
 
                 COLTag.Append("/>");
@@ -594,7 +592,7 @@ namespace Microsoft.PowerShell.Commands
 
                 // for writing the property name
                 WritePropertyName(Listtag, p);
-                Listtag.Append(":");
+                Listtag.Append(':');
                 Listtag.Append("</td>");
 
                 // for writing the property value

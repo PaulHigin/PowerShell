@@ -1,7 +1,6 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Management.Automation.Internal;
@@ -21,17 +20,17 @@ namespace System.Management.Automation
         /// <summary>
         /// Depth of serialization.
         /// </summary>
-        private int _depth;
+        private readonly int _depth;
 
         /// <summary>
         /// XmlWriter to be used for writing.
         /// </summary>
-        private XmlWriter _writer;
+        private readonly XmlWriter _writer;
 
         /// <summary>
         /// Whether type information should be included in the xml.
         /// </summary>
-        private bool _notypeinformation;
+        private readonly bool _notypeinformation;
 
         /// <summary>
         /// CustomerSerializer used for formatting the output for _writer.
@@ -55,12 +54,12 @@ namespace System.Management.Automation
         {
             if (writer == null)
             {
-                throw PSTraceSource.NewArgumentException("writer");
+                throw PSTraceSource.NewArgumentException(nameof(writer));
             }
 
             if (depth < 1)
             {
-                throw PSTraceSource.NewArgumentException("writer", Serialization.DepthOfOneRequired);
+                throw PSTraceSource.NewArgumentException(nameof(writer), Serialization.DepthOfOneRequired);
             }
 
             _depth = depth;
@@ -191,7 +190,7 @@ namespace System.Management.Automation
         /// <summary>
         /// Xml writer to be used.
         /// </summary>
-        private XmlWriter _writer;
+        private readonly XmlWriter _writer;
 
         /// <summary>
         /// Check first call for every pipeline object to write Object tag else property tag.
@@ -201,7 +200,7 @@ namespace System.Management.Automation
         /// <summary>
         /// Should the type information to be shown.
         /// </summary>
-        private bool _notypeinformation;
+        private readonly bool _notypeinformation;
 
         /// <summary>
         /// Check object call.
@@ -648,7 +647,7 @@ namespace System.Management.Automation
             if (property != null)
             {
                 WriteStartElement(_writer, CustomSerializationStrings.Properties);
-                WriteAttribute(_writer, CustomSerializationStrings.NameAttribute, property.ToString());
+                WriteAttribute(_writer, CustomSerializationStrings.NameAttribute, property);
             }
             else
             {
@@ -710,8 +709,7 @@ namespace System.Management.Automation
                     continue;
                 }
 
-                PSPropertyInfo property = info as PSPropertyInfo;
-                if (property == null)
+                if (!(info is PSPropertyInfo property))
                 {
                     continue;
                 }
@@ -1063,9 +1061,9 @@ namespace System.Management.Automation
             XmlWriter writer, PSPropertyInfo source, int depth)
         {
             WriteStartElement(writer, CustomSerializationStrings.Properties);
-            WriteAttribute(writer, CustomSerializationStrings.NameAttribute, ((PSPropertyInfo)source).Name.ToString());
+            WriteAttribute(writer, CustomSerializationStrings.NameAttribute, ((PSPropertyInfo)source).Name);
             if (!_notypeinformation)
-                WriteAttribute(writer, CustomSerializationStrings.TypeAttribute, ((PSPropertyInfo)source).TypeNameOfValue.ToString());
+                WriteAttribute(writer, CustomSerializationStrings.TypeAttribute, ((PSPropertyInfo)source).TypeNameOfValue);
             writer.WriteEndElement();
         }
 
@@ -1075,7 +1073,7 @@ namespace System.Management.Automation
             if (property != null)
             {
                 WriteStartElement(writer, CustomSerializationStrings.Properties);
-                WriteAttribute(writer, CustomSerializationStrings.NameAttribute, property.ToString());
+                WriteAttribute(writer, CustomSerializationStrings.NameAttribute, property);
             }
             else
             {
@@ -1104,7 +1102,6 @@ namespace System.Management.Automation
         /// <param name="property">Name of property. Pass null for item.</param>
         /// <param name="source">Object to be written.</param>
         /// <param name="entry">Serialization information about source.</param>
-
         private void WriteOnePrimitiveKnownType(
             XmlWriter writer, string property, object source, TypeSerializationInfo entry)
         {

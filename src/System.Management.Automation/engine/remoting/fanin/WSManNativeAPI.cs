@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System.Diagnostics.CodeAnalysis;
@@ -23,7 +23,9 @@ namespace System.Management.Automation.Remoting.Client
         internal const string ResourceURIPrefix = @"http://schemas.microsoft.com/powershell/";
         internal const string NoProfile = "WINRS_NOPROFILE";
         internal const string CodePage = "WINRS_CODEPAGE";
+
         internal static readonly Version WSMAN_STACK_VERSION = new Version(3, 0);
+
         internal const int WSMAN_FLAG_REQUESTED_API_VERSION_1_1 = 1;
         // WSMan's default max env size in V2
         internal const int WSMAN_DEFAULT_MAX_ENVELOPE_SIZE_KB_V2 = 150;
@@ -623,6 +625,7 @@ namespace System.Management.Automation.Remoting.Client
         internal class WSManBinaryOrTextDataStruct
         {
             internal int bufferLength;
+
             [SuppressMessage("Microsoft.Reliability", "CA2006:UseSafeHandleToEncapsulateNativeResources")]
             internal IntPtr data;
         }
@@ -632,9 +635,11 @@ namespace System.Management.Automation.Remoting.Client
         /// </summary>
         internal class WSManData_ManToUn : IDisposable
         {
-            private WSManDataStruct _internalData;
+            private readonly WSManDataStruct _internalData;
+
             [SuppressMessage("Microsoft.Reliability", "CA2006:UseSafeHandleToEncapsulateNativeResources")]
             private IntPtr _marshalledObject = IntPtr.Zero;
+
             [SuppressMessage("Microsoft.Reliability", "CA2006:UseSafeHandleToEncapsulateNativeResources")]
             private IntPtr _marshalledBuffer = IntPtr.Zero;
 
@@ -766,6 +771,7 @@ namespace System.Management.Automation.Remoting.Client
             /// Gets the type of data.
             /// </summary>
             private uint _type;
+
             internal uint Type
             {
                 get { return _type; }
@@ -777,6 +783,7 @@ namespace System.Management.Automation.Remoting.Client
             /// Gets the buffer length of data.
             /// </summary>
             private int _bufferLength;
+
             internal int BufferLength
             {
                 get { return _bufferLength; }
@@ -785,6 +792,7 @@ namespace System.Management.Automation.Remoting.Client
             }
 
             private string _text;
+
             internal string Text
             {
                 get
@@ -797,6 +805,7 @@ namespace System.Management.Automation.Remoting.Client
             }
 
             private byte[] _data;
+
             internal byte[] Data
             {
                 get
@@ -876,7 +885,7 @@ namespace System.Management.Automation.Remoting.Client
         [StructLayout(LayoutKind.Sequential)]
         internal struct WSManDataDWord
         {
-            private WSManDataType _type;
+            private readonly WSManDataType _type;
             private WSManDWordDataInternal _dwordData;
 
             /// <summary>
@@ -927,6 +936,7 @@ namespace System.Management.Automation.Remoting.Client
         internal struct WSManStreamIDSetStruct
         {
             internal int streamIDsCount;
+
             [SuppressMessage("Microsoft.Reliability", "CA2006:UseSafeHandleToEncapsulateNativeResources")]
             internal IntPtr streamIDs;
         }
@@ -1081,6 +1091,7 @@ namespace System.Management.Automation.Remoting.Client
             /// </summary>
             [SuppressMessage("Microsoft.Reliability", "CA2006:UseSafeHandleToEncapsulateNativeResources")]
             internal IntPtr options;
+
             internal bool optionsMustUnderstand;
         }
 
@@ -1215,11 +1226,13 @@ namespace System.Management.Automation.Remoting.Client
             internal struct WSManCommandArgSetInternal
             {
                 internal int argsCount;
+
                 [SuppressMessage("Microsoft.Reliability", "CA2006:UseSafeHandleToEncapsulateNativeResources")]
                 internal IntPtr args;
             }
 
             private WSManCommandArgSetInternal _internalData;
+
             [SuppressMessage("Microsoft.Reliability", "CA2006:UseSafeHandleToEncapsulateNativeResources")]
             private MarshalledObject _data;
 
@@ -1547,6 +1560,7 @@ namespace System.Management.Automation.Remoting.Client
             {
                 [MarshalAs(UnmanagedType.LPWStr)]
                 internal string name;
+
                 [MarshalAs(UnmanagedType.LPWStr)]
                 internal string value;
             }
@@ -1722,8 +1736,9 @@ namespace System.Management.Automation.Remoting.Client
         {
             // GC handle which prevents garbage collector from collecting this delegate.
             private GCHandle _gcHandle;
+
             [SuppressMessage("Microsoft.Reliability", "CA2006:UseSafeHandleToEncapsulateNativeResources")]
-            private IntPtr _asyncCallback;
+            private readonly IntPtr _asyncCallback;
 
             internal WSManShellAsyncCallback(WSManShellCompletionFunction callback)
             {
@@ -1959,9 +1974,12 @@ namespace System.Management.Automation.Remoting.Client
             {
                 [MarshalAs(UnmanagedType.LPWStr)]
                 internal string streamId;
+
                 internal WSManDataStruct data;
+
                 [MarshalAs(UnmanagedType.LPWStr)]
                 internal string commandState;
+
                 internal int exitCode;
             }
 
@@ -2066,8 +2084,10 @@ namespace System.Management.Automation.Remoting.Client
                 /// WSManSenderDetails.
                 /// </summary>
                 internal IntPtr senderDetails;
+
                 [MarshalAs(UnmanagedType.LPWStr)]
                 internal string locale;
+
                 [MarshalAs(UnmanagedType.LPWStr)]
                 internal string resourceUri;
                 /// <summary>
@@ -2119,6 +2139,7 @@ namespace System.Management.Automation.Remoting.Client
             {
                 [MarshalAs(UnmanagedType.LPWStr)]
                 internal string senderName;
+
                 [MarshalAs(UnmanagedType.LPWStr)]
                 internal string authenticationMechanism;
                 /// <summary>
@@ -2126,6 +2147,7 @@ namespace System.Management.Automation.Remoting.Client
                 /// </summary>
                 internal IntPtr certificateDetails;
                 internal IntPtr clientToken;
+
                 [MarshalAs(UnmanagedType.LPWStr)]
                 internal string httpUrl;
             }
@@ -2168,10 +2190,13 @@ namespace System.Management.Automation.Remoting.Client
             {
                 [MarshalAs(UnmanagedType.LPWStr)]
                 internal string subject;
+
                 [MarshalAs(UnmanagedType.LPWStr)]
                 internal string issuerName;
+
                 [MarshalAs(UnmanagedType.LPWStr)]
                 internal string issuerThumbprint;
+
                 [MarshalAs(UnmanagedType.LPWStr)]
                 internal string subjectName;
             }
@@ -2228,6 +2253,7 @@ namespace System.Management.Automation.Remoting.Client
             {
                 [MarshalAs(UnmanagedType.LPWStr)]
                 internal string path;
+
                 [MarshalAs(UnmanagedType.LPWStr)]
                 internal string dialect;
             }
@@ -2240,6 +2266,7 @@ namespace System.Management.Automation.Remoting.Client
             {
                 [MarshalAs(UnmanagedType.LPWStr)]
                 internal string filter;
+
                 [MarshalAs(UnmanagedType.LPWStr)]
                 internal string dialect;
             }
@@ -2299,6 +2326,7 @@ namespace System.Management.Automation.Remoting.Client
             {
                 [MarshalAs(UnmanagedType.LPWStr)]
                 internal string key;
+
                 [MarshalAs(UnmanagedType.LPWStr)]
                 internal string value;
             }
@@ -2329,7 +2357,7 @@ namespace System.Management.Automation.Remoting.Client
         /// </returns>
         [DllImport(WSManNativeApi.WSManClientApiDll, SetLastError = false, CharSet = CharSet.Unicode)]
         internal static extern int WSManInitialize(int flags,
-          [In, Out]  ref IntPtr wsManAPIHandle);
+          [In, Out] ref IntPtr wsManAPIHandle);
 
         /// <summary>
         /// This API deinitializes the Winrm client stack; all operations will
@@ -2362,11 +2390,11 @@ namespace System.Management.Automation.Remoting.Client
         /// <returns></returns>
         [DllImport(WSManNativeApi.WSManClientApiDll, SetLastError = false, CharSet = CharSet.Unicode)]
         internal static extern int WSManCreateSession(IntPtr wsManAPIHandle,
-            [MarshalAs(UnmanagedType.LPWStr)]string connection,
+            [MarshalAs(UnmanagedType.LPWStr)] string connection,
             int flags,
             IntPtr authenticationCredentials,
             IntPtr proxyInfo,
-            [In, Out]  ref IntPtr wsManSessionHandle);
+            [In, Out] ref IntPtr wsManSessionHandle);
 
         /// <summary>
         /// Frees memory of session and closes all related operations before returning;
@@ -2415,9 +2443,9 @@ namespace System.Management.Automation.Remoting.Client
         /// <param name="value">
         /// An int (DWORD) data.
         /// </param>
-        /// <returns></returns>
+        /// <returns>Zero on success, otherwise the error code.</returns>
         [DllImport(WSManNativeApi.WSManClientApiDll, SetLastError = false, CharSet = CharSet.Unicode)]
-        internal static extern void WSManGetSessionOptionAsDword(IntPtr wsManSessionHandle,
+        internal static extern int WSManGetSessionOptionAsDword(IntPtr wsManSessionHandle,
             WSManSessionOption option,
             out int value);
 
@@ -2452,8 +2480,8 @@ namespace System.Management.Automation.Remoting.Client
 
             // Now get the actual value
             int messageLength;
-            if (0 != WSManGetSessionOptionAsString(wsManAPIHandle,
-                    option, bufferSizeInBytes, msgBufferPtr, out messageLength))
+            if (WSManGetSessionOptionAsString(wsManAPIHandle,
+                    option, bufferSizeInBytes, msgBufferPtr, out messageLength) != 0)
             {
                 return returnval;
             }
@@ -2525,13 +2553,13 @@ namespace System.Management.Automation.Remoting.Client
         [DllImport(WSManNativeApi.WSManClientApiDll, EntryPoint = "WSManCreateShellEx", SetLastError = false, CharSet = CharSet.Unicode)]
         private static extern void WSManCreateShellExInternal(IntPtr wsManSessionHandle,
             int flags,
-            [MarshalAs(UnmanagedType.LPWStr)]string resourceUri,
-            [MarshalAs(UnmanagedType.LPWStr)]string shellId,
+            [MarshalAs(UnmanagedType.LPWStr)] string resourceUri,
+            [MarshalAs(UnmanagedType.LPWStr)] string shellId,
             IntPtr startupInfo,
             IntPtr optionSet,
             IntPtr openContent,
             IntPtr asyncCallback,
-            [In, Out]  ref IntPtr shellOperationHandle);
+            [In, Out] ref IntPtr shellOperationHandle);
 
         /// <summary>
         /// </summary>
@@ -2546,12 +2574,12 @@ namespace System.Management.Automation.Remoting.Client
         [DllImport(WSManNativeApi.WSManClientApiDll, EntryPoint = "WSManConnectShell", SetLastError = false, CharSet = CharSet.Unicode)]
         internal static extern void WSManConnectShellEx(IntPtr wsManSessionHandle,
             int flags,
-            [MarshalAs(UnmanagedType.LPWStr)]string resourceUri,
-            [MarshalAs(UnmanagedType.LPWStr)]string shellId,
+            [MarshalAs(UnmanagedType.LPWStr)] string resourceUri,
+            [MarshalAs(UnmanagedType.LPWStr)] string shellId,
             IntPtr optionSet,
             IntPtr connectXml,
             IntPtr asyncCallback,
-            [In, Out]  ref IntPtr shellOperationHandle);
+            [In, Out] ref IntPtr shellOperationHandle);
 
         /// <summary>
         /// </summary>
@@ -2657,7 +2685,7 @@ namespace System.Management.Automation.Remoting.Client
             int flags,
             IntPtr desiredStreamSet,
             IntPtr asyncCallback,
-            [In, Out]  ref IntPtr receiveOperationHandle);
+            [In, Out] ref IntPtr receiveOperationHandle);
 
         /// <summary>
         /// Send data to the remote end.
@@ -2698,7 +2726,7 @@ namespace System.Management.Automation.Remoting.Client
             IntPtr streamData,
             bool endOfStream,
             IntPtr asyncCallback,
-            [In, Out]  ref IntPtr sendOperationHandle);
+            [In, Out] ref IntPtr sendOperationHandle);
 
         /// <summary>
         /// Closes a shell or a command; if the callback associated with the operation
@@ -2802,8 +2830,8 @@ namespace System.Management.Automation.Remoting.Client
 
             // Now get the actual value
             int messageLength;
-            if (0 != WSManGetErrorMessage(wsManAPIHandle,
-                    0, langCode, errorCode, bufferSizeInBytes, msgBufferPtr, out messageLength))
+            if (WSManGetErrorMessage(wsManAPIHandle,
+                    0, langCode, errorCode, bufferSizeInBytes, msgBufferPtr, out messageLength) != 0)
             {
                 return returnval;
             }

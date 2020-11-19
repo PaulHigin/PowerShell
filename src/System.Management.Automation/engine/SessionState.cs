@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System.Collections;
@@ -18,7 +18,6 @@ namespace System.Management.Automation
     /// <summary>
     /// Holds the state of a Monad Shell session.
     /// </summary>
-
     [SuppressMessage("Microsoft.Maintainability", "CA1506:AvoidExcessiveClassCoupling", Justification = "This is a bridge class between internal classes and a public interface. It requires this much coupling.")]
     internal sealed partial class SessionStateInternal
     {
@@ -31,7 +30,7 @@ namespace System.Management.Automation
         [Dbg.TraceSourceAttribute(
              "SessionState",
              "SessionState Class")]
-        private static Dbg.PSTraceSource s_tracer =
+        private static readonly Dbg.PSTraceSource s_tracer =
             Dbg.PSTraceSource.GetTracer("SessionState",
              "SessionState Class");
 
@@ -56,7 +55,7 @@ namespace System.Management.Automation
         {
             if (context == null)
             {
-                throw PSTraceSource.NewArgumentNullException("context");
+                throw PSTraceSource.NewArgumentNullException(nameof(context));
             }
 
             ExecutionContext = context;
@@ -67,7 +66,7 @@ namespace System.Management.Automation
             _workingLocationStack = new Dictionary<string, Stack<PathInfo>>(StringComparer.OrdinalIgnoreCase);
 
             // Conservative choice to limit the Set-Location history in order to limit memory impact in case of a regression.
-            const uint locationHistoryLimit = 20;
+            const int locationHistoryLimit = 20;
             _setLocationHistory = new HistoryStack<PathInfo>(locationHistoryLimit);
 
             GlobalScope = new SessionStateScope(null);
@@ -348,11 +347,11 @@ namespace System.Management.Automation
 
             // $PSCulture
             v = new PSCultureVariable();
-            this.GlobalScope.SetVariable(v.Name, v, asValue: false, force: true, this, CommandOrigin.Internal, fastPath: true);
+            this.GlobalScope.SetVariableForce(v, this);
 
             // $PSUICulture
             v = new PSUICultureVariable();
-            this.GlobalScope.SetVariable(v.Name, v, asValue: false, force: true, this, CommandOrigin.Internal, fastPath: true);
+            this.GlobalScope.SetVariableForce(v, this);
 
             // $?
             v = new QuestionMarkVariable(this.ExecutionContext);

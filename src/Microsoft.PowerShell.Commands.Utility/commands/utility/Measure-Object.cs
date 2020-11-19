@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -7,8 +7,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Management.Automation;
 using System.Management.Automation.Internal;
-
-using Microsoft.PowerShell.Commands.Internal.Format;
 
 namespace Microsoft.PowerShell.Commands
 {
@@ -151,7 +149,7 @@ namespace Microsoft.PowerShell.Commands
     /// Measure object cmdlet.
     /// </summary>
     [Cmdlet(VerbsDiagnostic.Measure, "Object", DefaultParameterSetName = GenericParameterSet,
-        HelpUri = "https://go.microsoft.com/fwlink/?LinkID=113349", RemotingCapability = RemotingCapability.None)]
+        HelpUri = "https://go.microsoft.com/fwlink/?LinkID=2096617", RemotingCapability = RemotingCapability.None)]
     [OutputType(typeof(GenericMeasureInfo), typeof(TextMeasureInfo), typeof(GenericObjectMeasureInfo))]
     public sealed class MeasureObjectCommand : PSCmdlet
     {
@@ -198,7 +196,6 @@ namespace Microsoft.PowerShell.Commands
         /// to maintain two sets of MeasureInfo and constantly checking
         /// what mode we're in.
         /// </summary>
-
         [SuppressMessage("Microsoft.Performance", "CA1812:AvoidUninstantiatedInternalClasses")]
         private class Statistics
         {
@@ -235,7 +232,7 @@ namespace Microsoft.PowerShell.Commands
         /// </summary>
         /// <value></value>
         [Parameter(ValueFromPipeline = true)]
-        public PSObject InputObject { set; get; } = AutomationNull.Value;
+        public PSObject InputObject { get; set; } = AutomationNull.Value;
 
         /// <summary>
         /// Properties to be examined.
@@ -453,7 +450,7 @@ namespace Microsoft.PowerShell.Commands
         {
             get
             {
-                return string.Compare(ParameterSetName, GenericParameterSet, StringComparison.Ordinal) == 0;
+                return string.Equals(ParameterSetName, GenericParameterSet, StringComparison.Ordinal);
             }
         }
 
@@ -960,7 +957,7 @@ namespace Microsoft.PowerShell.Commands
         /// The observed statistics keyed by property name.
         /// If Property is not set, then the key used will be the value of thisObject.
         /// </summary>
-        private MeasureObjectDictionary<Statistics> _statistics = new MeasureObjectDictionary<Statistics>();
+        private readonly MeasureObjectDictionary<Statistics> _statistics = new MeasureObjectDictionary<Statistics>();
 
         /// <summary>
         /// Whether or not a numeric conversion error occurred.

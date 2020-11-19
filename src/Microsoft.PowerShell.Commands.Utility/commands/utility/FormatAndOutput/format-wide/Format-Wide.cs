@@ -1,7 +1,6 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System;
 using System.IO;
 using System.Management.Automation;
 using System.Management.Automation.Internal;
@@ -13,7 +12,7 @@ namespace Microsoft.PowerShell.Commands
     /// <summary>
     /// Implementation for the format-table command.
     /// </summary>
-    [Cmdlet(VerbsCommon.Format, "Wide", HelpUri = "https://go.microsoft.com/fwlink/?LinkID=113304")]
+    [Cmdlet(VerbsCommon.Format, "Wide", HelpUri = "https://go.microsoft.com/fwlink/?LinkID=2096930")]
     public class FormatWideCommand : OuterFormatShapeCommandBase
     {
         /// <summary>
@@ -145,4 +144,3 @@ namespace Microsoft.PowerShell.Commands
         }
     }
 }
-

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 #region Using directives
@@ -49,7 +49,7 @@ namespace Microsoft.Management.Infrastructure.CimCmdlets
             if (containsErrorRecord != null)
             {
                 return InitializeErrorRecord(context,
-                    exception : inner,
+                    exception: inner,
                     errorId: "CimCmdlet_" + containsErrorRecord.ErrorRecord.FullyQualifiedErrorId,
                     errorCategory: containsErrorRecord.ErrorRecord.CategoryInfo.Category,
                     cimResultContext: cimResultContext);
@@ -57,7 +57,7 @@ namespace Microsoft.Management.Infrastructure.CimCmdlets
             else
             {
                 return InitializeErrorRecord(context,
-                    exception :inner,
+                    exception: inner,
                     errorId: "CimCmdlet_" + inner.GetType().Name,
                     errorCategory: ErrorCategory.NotSpecified,
                     cimResultContext: cimResultContext);
@@ -375,7 +375,7 @@ namespace Microsoft.Management.Infrastructure.CimCmdlets
         /// Error instance
         /// </para>
         /// </summary>
-        private CimInstance error;
+        private readonly CimInstance error;
 
         internal CimInstance Error
         {
@@ -398,7 +398,7 @@ namespace Microsoft.Management.Infrastructure.CimCmdlets
             }
         }
 
-        private Exception exception;
+        private readonly Exception exception;
 
         /// <summary>
         /// <para>
@@ -406,7 +406,7 @@ namespace Microsoft.Management.Infrastructure.CimCmdlets
         /// the information while issuing the current operation
         /// </para>
         /// </summary>
-        private InvocationContext invocationContext;
+        private readonly InvocationContext invocationContext;
 
         internal InvocationContext CimInvocationContext
         {
@@ -419,7 +419,7 @@ namespace Microsoft.Management.Infrastructure.CimCmdlets
         /// <summary>
         /// <see cref="CimResultConte"/>
         /// </summary>
-        private CimResultContext cimResultContext;
+        private readonly CimResultContext cimResultContext;
 
         internal CimResultContext ResultContext
         {

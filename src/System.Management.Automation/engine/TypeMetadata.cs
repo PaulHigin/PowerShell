@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
@@ -51,7 +51,7 @@ namespace System.Management.Automation
         {
             if (other == null)
             {
-                throw PSTraceSource.NewArgumentNullException("other");
+                throw PSTraceSource.NewArgumentNullException(nameof(other));
             }
 
             _helpMessage = other._helpMessage;
@@ -265,13 +265,13 @@ namespace System.Management.Automation
             get
             {
                 ParameterFlags flags = 0;
-                if (IsMandatory) { flags = flags | ParameterFlags.Mandatory; }
+                if (IsMandatory) { flags |= ParameterFlags.Mandatory; }
 
-                if (ValueFromPipeline) { flags = flags | ParameterFlags.ValueFromPipeline; }
+                if (ValueFromPipeline) { flags |= ParameterFlags.ValueFromPipeline; }
 
-                if (ValueFromPipelineByPropertyName) { flags = flags | ParameterFlags.ValueFromPipelineByPropertyName; }
+                if (ValueFromPipelineByPropertyName) { flags |= ParameterFlags.ValueFromPipelineByPropertyName; }
 
-                if (ValueFromRemainingArguments) { flags = flags | ParameterFlags.ValueFromRemainingArguments; }
+                if (ValueFromRemainingArguments) { flags |= ParameterFlags.ValueFromRemainingArguments; }
 
                 return flags;
             }
@@ -411,7 +411,7 @@ namespace System.Management.Automation
         {
             if (string.IsNullOrEmpty(name))
             {
-                throw PSTraceSource.NewArgumentNullException("name");
+                throw PSTraceSource.NewArgumentNullException(nameof(name));
             }
 
             _name = name;
@@ -431,7 +431,7 @@ namespace System.Management.Automation
         {
             if (other == null)
             {
-                throw PSTraceSource.NewArgumentNullException("other");
+                throw PSTraceSource.NewArgumentNullException(nameof(other));
             }
 
             _isDynamic = other._isDynamic;
@@ -625,7 +625,7 @@ namespace System.Management.Automation
         {
             if (type == null)
             {
-                throw PSTraceSource.NewArgumentNullException("type");
+                throw PSTraceSource.NewArgumentNullException(nameof(type));
             }
 
             CommandMetadata cmdMetaData = new CommandMetadata(type);
@@ -1165,7 +1165,7 @@ namespace System.Management.Automation
         {
             if (type == null)
             {
-                throw PSTraceSource.NewArgumentNullException("type");
+                throw PSTraceSource.NewArgumentNullException(nameof(type));
             }
 
             InternalParameterMetadata result;
@@ -1208,7 +1208,7 @@ namespace System.Management.Automation
         {
             if (runtimeDefinedParameters == null)
             {
-                throw PSTraceSource.NewArgumentNullException("runtimeDefinedParameters");
+                throw PSTraceSource.NewArgumentNullException(nameof(runtimeDefinedParameters));
             }
 
             ConstructCompiledParametersUsingRuntimeDefinedParameters(runtimeDefinedParameters, processingDynamicParameters, checkNames);
@@ -1236,7 +1236,7 @@ namespace System.Management.Automation
         {
             if (type == null)
             {
-                throw PSTraceSource.NewArgumentNullException("type");
+                throw PSTraceSource.NewArgumentNullException(nameof(type));
             }
 
             _type = type;
@@ -1274,7 +1274,7 @@ namespace System.Management.Automation
         /// This member is null in all cases except when constructed with using reflection
         /// against the Type.
         /// </summary>
-        private Type _type;
+        private readonly Type _type;
 
         /// <summary>
         /// The flags used when reflecting against the object to create the metadata.
@@ -1544,10 +1544,9 @@ namespace System.Management.Automation
         /// The cache of the type metadata. The key for the cache is the Type.FullName.
         /// Note, this is a case-sensitive dictionary because Type names are case sensitive.
         /// </summary>
-        private static System.Collections.Concurrent.ConcurrentDictionary<string, InternalParameterMetadata> s_parameterMetadataCache =
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, InternalParameterMetadata> s_parameterMetadataCache =
             new System.Collections.Concurrent.ConcurrentDictionary<string, InternalParameterMetadata>(StringComparer.Ordinal);
 
         #endregion Metadata cache
     }
 }
-

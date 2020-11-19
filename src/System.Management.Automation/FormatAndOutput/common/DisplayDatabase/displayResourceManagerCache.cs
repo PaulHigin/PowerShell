@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -81,7 +81,7 @@ namespace Microsoft.PowerShell.Commands.Internal.Format
             else
             {
                 resourceReference.assemblyLocation = loadResult.a.Location;
-            };
+            }
 
             // load now the resource from the resource manager cache
             try
@@ -216,11 +216,10 @@ namespace Microsoft.PowerShell.Commands.Internal.Format
                 return result;
             }
 
-            private Hashtable _assemblyReferences = new Hashtable(StringComparer.OrdinalIgnoreCase);
+            private readonly Hashtable _assemblyReferences = new Hashtable(StringComparer.OrdinalIgnoreCase);
         }
 
-        private AssemblyNameResolver _assemblyNameResolver = new AssemblyNameResolver();
-        private Hashtable _resourceReferenceToAssemblyCache = new Hashtable();
+        private readonly AssemblyNameResolver _assemblyNameResolver = new AssemblyNameResolver();
+        private readonly Hashtable _resourceReferenceToAssemblyCache = new Hashtable();
     }
 }
-

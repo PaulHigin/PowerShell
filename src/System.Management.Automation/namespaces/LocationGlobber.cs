@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
@@ -25,7 +25,7 @@ namespace System.Management.Automation
         [Dbg.TraceSourceAttribute(
              "LocationGlobber",
              "The location globber converts PowerShell paths with glob characters to zero or more paths.")]
-        private static Dbg.PSTraceSource s_tracer =
+        private static readonly Dbg.PSTraceSource s_tracer =
             Dbg.PSTraceSource.GetTracer("LocationGlobber",
              "The location globber converts PowerShell paths with glob characters to zero or more paths.");
 
@@ -35,7 +35,7 @@ namespace System.Management.Automation
         [Dbg.TraceSourceAttribute(
              "PathResolution",
              "Traces the path resolution algorithm.")]
-        private static Dbg.PSTraceSource s_pathResolutionTracer =
+        private static readonly Dbg.PSTraceSource s_pathResolutionTracer =
             Dbg.PSTraceSource.GetTracer(
                 "PathResolution",
                 "Traces the path resolution algorithm.",
@@ -58,7 +58,7 @@ namespace System.Management.Automation
         {
             if (sessionState == null)
             {
-                throw PSTraceSource.NewArgumentNullException("sessionState");
+                throw PSTraceSource.NewArgumentNullException(nameof(sessionState));
             }
 
             _sessionState = sessionState;
@@ -174,12 +174,12 @@ namespace System.Management.Automation
             providerInstance = null;
             if (path == null)
             {
-                throw PSTraceSource.NewArgumentNullException("path");
+                throw PSTraceSource.NewArgumentNullException(nameof(path));
             }
 
             if (context == null)
             {
-                throw PSTraceSource.NewArgumentNullException("context");
+                throw PSTraceSource.NewArgumentNullException(nameof(context));
             }
 
             Collection<PathInfo> result;
@@ -663,7 +663,7 @@ namespace System.Management.Automation
             providerInstance = null;
             if (path == null)
             {
-                throw PSTraceSource.NewArgumentNullException("path");
+                throw PSTraceSource.NewArgumentNullException(nameof(path));
             }
 
             CmdletProviderContext context =
@@ -738,12 +738,12 @@ namespace System.Management.Automation
         {
             if (path == null)
             {
-                throw PSTraceSource.NewArgumentNullException("path");
+                throw PSTraceSource.NewArgumentNullException(nameof(path));
             }
 
             if (context == null)
             {
-                throw PSTraceSource.NewArgumentNullException("context");
+                throw PSTraceSource.NewArgumentNullException(nameof(context));
             }
 
             using (s_pathResolutionTracer.TraceScope("Resolving MSH path \"{0}\" to PROVIDER-INTERNAL path", path))
@@ -849,7 +849,7 @@ namespace System.Management.Automation
 
             if (path == null)
             {
-                throw PSTraceSource.NewArgumentNullException("path");
+                throw PSTraceSource.NewArgumentNullException(nameof(path));
             }
 
             CmdletProviderContext context =
@@ -935,17 +935,17 @@ namespace System.Management.Automation
 
             if (path == null)
             {
-                throw PSTraceSource.NewArgumentNullException("path");
+                throw PSTraceSource.NewArgumentNullException(nameof(path));
             }
 
             if (providerId == null)
             {
-                throw PSTraceSource.NewArgumentNullException("providerId");
+                throw PSTraceSource.NewArgumentNullException(nameof(providerId));
             }
 
             if (context == null)
             {
-                throw PSTraceSource.NewArgumentNullException("context");
+                throw PSTraceSource.NewArgumentNullException(nameof(context));
             }
 
             using (s_pathResolutionTracer.TraceScope("Resolving PROVIDER-INTERNAL path \"{0}\" to PROVIDER-INTERNAL path", path))
@@ -1057,7 +1057,7 @@ namespace System.Management.Automation
         {
             if (path == null)
             {
-                throw PSTraceSource.NewArgumentNullException("path");
+                throw PSTraceSource.NewArgumentNullException(nameof(path));
             }
 
             CmdletProviderContext context =
@@ -1129,7 +1129,7 @@ namespace System.Management.Automation
         {
             if (path == null)
             {
-                throw PSTraceSource.NewArgumentNullException("path");
+                throw PSTraceSource.NewArgumentNullException(nameof(path));
             }
 
             PSDriveInfo drive = null;
@@ -1217,12 +1217,12 @@ namespace System.Management.Automation
         {
             if (path == null)
             {
-                throw PSTraceSource.NewArgumentNullException("path");
+                throw PSTraceSource.NewArgumentNullException(nameof(path));
             }
 
             if (context == null)
             {
-                throw PSTraceSource.NewArgumentNullException("context");
+                throw PSTraceSource.NewArgumentNullException(nameof(context));
             }
 
             string result = null;
@@ -1374,7 +1374,7 @@ namespace System.Management.Automation
 
             if (path == null)
             {
-                throw PSTraceSource.NewArgumentNullException("path");
+                throw PSTraceSource.NewArgumentNullException(nameof(path));
             }
 
             providerId = null;
@@ -1472,7 +1472,7 @@ namespace System.Management.Automation
 
             if (path == null)
             {
-                throw PSTraceSource.NewArgumentNullException("path");
+                throw PSTraceSource.NewArgumentNullException(nameof(path));
             }
 
             bool result = false;
@@ -1561,7 +1561,7 @@ namespace System.Management.Automation
 
             if (path == null)
             {
-                throw PSTraceSource.NewArgumentNullException("path");
+                throw PSTraceSource.NewArgumentNullException(nameof(path));
             }
 
             bool result = false;
@@ -1654,7 +1654,7 @@ namespace System.Management.Automation
         /// <summary>
         /// The instance of session state on which this globber acts.
         /// </summary>
-        private SessionState _sessionState;
+        private readonly SessionState _sessionState;
 
         /// <summary>
         /// Removes the back tick "`" from any of the glob characters in the path.
@@ -1672,7 +1672,7 @@ namespace System.Management.Automation
         {
             if (path == null)
             {
-                throw PSTraceSource.NewArgumentNullException("path");
+                throw PSTraceSource.NewArgumentNullException(nameof(path));
             }
 
             string result = WildcardPattern.Unescape(path);
@@ -1714,25 +1714,25 @@ namespace System.Management.Automation
         {
             if (driveName == null)
             {
-                throw PSTraceSource.NewArgumentNullException("driveName");
+                throw PSTraceSource.NewArgumentNullException(nameof(driveName));
             }
 
             bool result = false;
 
-            if (string.Compare(
+            if (string.Equals(
                     driveName,
                     StringLiterals.Global,
-                    StringComparison.OrdinalIgnoreCase) == 0)
+                    StringComparison.OrdinalIgnoreCase))
             {
                 // It's the global scope.
                 s_tracer.WriteLine("match found: {0}", StringLiterals.Global);
                 result = true;
                 scope = _sessionState.Internal.GlobalScope;
             }
-            else if (string.Compare(
+            else if (string.Equals(
                         driveName,
                         StringLiterals.Local,
-                        StringComparison.OrdinalIgnoreCase) == 0)
+                        StringComparison.OrdinalIgnoreCase))
             {
                 // It's the local scope.
                 s_tracer.WriteLine("match found: {0}", driveName);
@@ -1817,7 +1817,7 @@ namespace System.Management.Automation
 
             if (path == null)
             {
-                throw PSTraceSource.NewArgumentNullException("path");
+                throw PSTraceSource.NewArgumentNullException(nameof(path));
             }
 
             workingDriveForPath = null;
@@ -1869,9 +1869,7 @@ namespace System.Management.Automation
                         if (normalizedPath.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase))
                         {
                             isPathForCurrentDrive = true;
-                            path = path.Substring(normalizedRoot.Length);
-                            path = path.TrimStart(StringLiterals.DefaultPathSeparator);
-                            path = StringLiterals.DefaultPathSeparator + path;
+                            path = string.Concat(StringLiterals.DefaultPathSeparatorString, path.AsSpan(normalizedRoot.Length).TrimStart(StringLiterals.DefaultPathSeparator));
                             workingDriveForPath = _sessionState.Drive.Current;
                         }
                     }
@@ -2048,12 +2046,12 @@ namespace System.Management.Automation
 
             if (path == null)
             {
-                throw PSTraceSource.NewArgumentNullException("path");
+                throw PSTraceSource.NewArgumentNullException(nameof(path));
             }
 
             if (drive == null)
             {
-                throw PSTraceSource.NewArgumentNullException("drive");
+                throw PSTraceSource.NewArgumentNullException(nameof(drive));
             }
 
             // This string will be filled in with the
@@ -2321,12 +2319,12 @@ namespace System.Management.Automation
         {
             if (drive == null)
             {
-                throw PSTraceSource.NewArgumentNullException("drive");
+                throw PSTraceSource.NewArgumentNullException(nameof(drive));
             }
 
             if (workingPath == null)
             {
-                throw PSTraceSource.NewArgumentNullException("workingPath");
+                throw PSTraceSource.NewArgumentNullException(nameof(workingPath));
             }
 
             // Trace the inputs
@@ -2380,7 +2378,7 @@ namespace System.Management.Automation
         {
             if (path == null)
             {
-                throw PSTraceSource.NewArgumentNullException("path");
+                throw PSTraceSource.NewArgumentNullException(nameof(path));
             }
 
             int providerIdSeparatorIndex = path.IndexOf(StringLiterals.ProviderPathSeparator, StringComparison.Ordinal);
@@ -2389,7 +2387,7 @@ namespace System.Management.Automation
             {
                 ArgumentException e =
                     PSTraceSource.NewArgumentException(
-                        "path",
+                        nameof(path),
                         SessionStateStrings.NotProviderQualifiedPath);
                 throw e;
             }
@@ -2459,17 +2457,17 @@ namespace System.Management.Automation
         {
             if (path == null)
             {
-                throw PSTraceSource.NewArgumentNullException("path");
+                throw PSTraceSource.NewArgumentNullException(nameof(path));
             }
 
             if (containerProvider == null)
             {
-                throw PSTraceSource.NewArgumentNullException("containerProvider");
+                throw PSTraceSource.NewArgumentNullException(nameof(containerProvider));
             }
 
             if (context == null)
             {
-                throw PSTraceSource.NewArgumentNullException("context");
+                throw PSTraceSource.NewArgumentNullException(nameof(context));
             }
 
             Collection<string> expandedPaths =
@@ -2499,7 +2497,7 @@ namespace System.Management.Automation
         {
             if (path == null)
             {
-                throw PSTraceSource.NewArgumentNullException("path");
+                throw PSTraceSource.NewArgumentNullException(nameof(path));
             }
 
             return WildcardPattern.ContainsWildcardCharacters(path);
@@ -2636,17 +2634,17 @@ namespace System.Management.Automation
         {
             if (path == null)
             {
-                throw PSTraceSource.NewArgumentNullException("path");
+                throw PSTraceSource.NewArgumentNullException(nameof(path));
             }
 
             if (provider == null)
             {
-                throw PSTraceSource.NewArgumentNullException("provider");
+                throw PSTraceSource.NewArgumentNullException(nameof(provider));
             }
 
             if (drive == null)
             {
-                throw PSTraceSource.NewArgumentNullException("drive");
+                throw PSTraceSource.NewArgumentNullException(nameof(drive));
             }
 
             s_tracer.WriteLine("path = {0}", path);
@@ -3061,12 +3059,12 @@ namespace System.Management.Automation
         {
             if (path == null)
             {
-                throw PSTraceSource.NewArgumentNullException("path");
+                throw PSTraceSource.NewArgumentNullException(nameof(path));
             }
 
             if (drive == null)
             {
-                throw PSTraceSource.NewArgumentNullException("drive");
+                throw PSTraceSource.NewArgumentNullException(nameof(drive));
             }
 
             string result = path;
@@ -3087,8 +3085,7 @@ namespace System.Management.Automation
                     }
                     else
                     {
-                        string possibleDriveName = path.Substring(0, index);
-                        if (string.Equals(possibleDriveName, drive.Name, StringComparison.OrdinalIgnoreCase))
+                        if (path.AsSpan(0, index).Equals(drive.Name, StringComparison.OrdinalIgnoreCase))
                         {
                             treatAsRelative = false;
                         }
@@ -3205,12 +3202,12 @@ namespace System.Management.Automation
         {
             if (path == null)
             {
-                throw PSTraceSource.NewArgumentNullException("path");
+                throw PSTraceSource.NewArgumentNullException(nameof(path));
             }
 
             if (provider == null)
             {
-                throw PSTraceSource.NewArgumentNullException("provider");
+                throw PSTraceSource.NewArgumentNullException(nameof(provider));
             }
 
             string result = path;
@@ -3345,12 +3342,12 @@ namespace System.Management.Automation
         {
             if (currentDirs == null)
             {
-                throw PSTraceSource.NewArgumentNullException("currentDirs");
+                throw PSTraceSource.NewArgumentNullException(nameof(currentDirs));
             }
 
             if (provider == null)
             {
-                throw PSTraceSource.NewArgumentNullException("provider");
+                throw PSTraceSource.NewArgumentNullException(nameof(provider));
             }
 
             NavigationCmdletProvider navigationProvider = provider as NavigationCmdletProvider;
@@ -3579,12 +3576,12 @@ namespace System.Management.Automation
         {
             if (path == null)
             {
-                throw PSTraceSource.NewArgumentNullException("path");
+                throw PSTraceSource.NewArgumentNullException(nameof(path));
             }
 
             if (provider == null)
             {
-                throw PSTraceSource.NewArgumentNullException("provider");
+                throw PSTraceSource.NewArgumentNullException(nameof(provider));
             }
 
             // See if the provider wants to convert the path and filter
@@ -3951,12 +3948,12 @@ namespace System.Management.Automation
         {
             if (currentDirs == null)
             {
-                throw PSTraceSource.NewArgumentNullException("currentDirs");
+                throw PSTraceSource.NewArgumentNullException(nameof(currentDirs));
             }
 
             if (provider == null)
             {
-                throw PSTraceSource.NewArgumentNullException("provider");
+                throw PSTraceSource.NewArgumentNullException(nameof(provider));
             }
 
             NavigationCmdletProvider navigationProvider = provider as NavigationCmdletProvider;
@@ -4402,7 +4399,7 @@ namespace System.Management.Automation
                 }
             } while (false);
 
-            s_tracer.WriteLine("result = {0}; childName = {1}", result, childName);
+            s_tracer.WriteLine("result = {0}; childName = {1}", result.ToString(), childName);
             return result;
         }
 
@@ -4432,23 +4429,23 @@ namespace System.Management.Automation
         {
             if (path == null)
             {
-                throw PSTraceSource.NewArgumentNullException("path");
+                throw PSTraceSource.NewArgumentNullException(nameof(path));
             }
 
             const char mshEscapeChar = '`';
             const char regexEscapeChar = '\\';
 
-            char[] workerArray = path.ToCharArray();
+            ReadOnlySpan<char> workerArray = path;
 
             StringBuilder result = new StringBuilder();
 
-            for (int index = 0; index < workerArray.GetLength(0); ++index)
+            for (int index = 0; index < workerArray.Length; ++index)
             {
                 // look for an escape character
 
                 if (workerArray[index] == mshEscapeChar)
                 {
-                    if (index + 1 < workerArray.GetLength(0))
+                    if (index + 1 < workerArray.Length)
                     {
                         if (workerArray[index + 1] == mshEscapeChar)
                         {
@@ -4522,7 +4519,7 @@ namespace System.Management.Automation
         {
             if (path == null)
             {
-                throw PSTraceSource.NewArgumentNullException("path");
+                throw PSTraceSource.NewArgumentNullException(nameof(path));
             }
 
             bool result = false;
@@ -4571,7 +4568,7 @@ namespace System.Management.Automation
         {
             if (path == null)
             {
-                throw PSTraceSource.NewArgumentNullException("path");
+                throw PSTraceSource.NewArgumentNullException(nameof(path));
             }
 
             return path.StartsWith(StringLiterals.DefaultRemotePathPrefix, StringComparison.Ordinal) ||
@@ -4611,7 +4608,7 @@ namespace System.Management.Automation
         {
             if (path == null)
             {
-                throw PSTraceSource.NewArgumentNullException("path");
+                throw PSTraceSource.NewArgumentNullException(nameof(path));
             }
 
             string result = path;

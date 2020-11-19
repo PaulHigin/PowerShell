@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -7,8 +7,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Management.Automation;
 using System.Management.Automation.Provider;
-
-using Dbg = System.Management.Automation;
 
 namespace Microsoft.PowerShell.Commands
 {
@@ -333,7 +331,7 @@ namespace Microsoft.PowerShell.Commands
         {
             Collection<PathInfo> pathInfos = ResolvePaths(unfilteredPaths, true, false, currentContext);
 
-            ArrayList paths = new ArrayList();
+            var paths = new List<string>();
 
             foreach (PathInfo pathInfo in pathInfos)
             {
@@ -343,7 +341,7 @@ namespace Microsoft.PowerShell.Commands
                 }
             }
 
-            return (string[])paths.ToArray(typeof(string));
+            return paths.ToArray();
         }
 
         #endregion protected members

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System.Collections;
@@ -101,10 +101,9 @@ namespace System.Management.Automation
         /// </exception>
         internal ParameterBinderController NewParameterBinderController(InternalCommand command)
         {
-            Cmdlet cmdlet = command as Cmdlet;
-            if (cmdlet == null)
+            if (!(command is Cmdlet cmdlet))
             {
-                throw PSTraceSource.NewArgumentException("command");
+                throw PSTraceSource.NewArgumentException(nameof(command));
             }
 
             ParameterBinderBase parameterBinder;
@@ -319,7 +318,7 @@ namespace System.Management.Automation
                     // NOTICE-2004/06/08-JonN 959638
                     using (commandRuntime.AllowThisCommandToWrite(true))
                     {
-                        if (Context._debuggingMode > 0 && !(Command is PSScriptCmdlet))
+                        if (Context._debuggingMode > 0 && Command is not PSScriptCmdlet)
                         {
                             Context.Debugger.CheckCommand(this.Command.MyInvocation);
                         }
@@ -528,7 +527,7 @@ namespace System.Management.Automation
                 try
                 {
                     // Process the input pipeline object
-                    if (false == ProcessInputPipelineObject(inputObject))
+                    if (!ProcessInputPipelineObject(inputObject))
                     {
                         // The input object was not bound to any parameters of the cmdlet.
                         // Write a non-terminating error and continue with the next input
@@ -667,6 +666,7 @@ namespace System.Management.Automation
         }
 
         private static readonly ConcurrentDictionary<Type, Func<Cmdlet>> s_constructInstanceCache;
+
         private static Cmdlet ConstructInstance(Type type)
         {
             // Call the default constructor if type derives from Cmdlet.
@@ -869,4 +869,3 @@ namespace System.Management.Automation
         #endregion helper_methods
     }
 }
-

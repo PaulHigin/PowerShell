@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System.Management.Automation;
@@ -10,7 +10,7 @@ namespace Microsoft.PowerShell.Commands
     /// <summary>
     /// Implementation for the out-printer command.
     /// </summary>
-    [Cmdlet(VerbsData.Out, "Printer", HelpUri = "https://go.microsoft.com/fwlink/?LinkID=113367")]
+    [Cmdlet(VerbsData.Out, "Printer", HelpUri = "https://go.microsoft.com/fwlink/?LinkID=2109553")]
     public class OutPrinterCommand : FrontEndCommandBase
     {
         /// <summary>
@@ -41,7 +41,7 @@ namespace Microsoft.PowerShell.Commands
         /// </summary>
         protected override void BeginProcessing()
         {
-            // set up the Scree Host interface
+            // set up the Screen Host interface
             OutputManagerInner outInner = (OutputManagerInner)this.implementation;
 
             outInner.LineOutput = InstantiateLineOutputInterface();

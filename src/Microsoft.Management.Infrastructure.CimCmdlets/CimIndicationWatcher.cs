@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 #region Using directives
@@ -53,7 +53,7 @@ namespace Microsoft.Management.Infrastructure.CimCmdlets
             }
         }
 
-        private Exception exception;
+        private readonly Exception exception;
 
         /// <summary>
         /// <para>
@@ -124,7 +124,7 @@ namespace Microsoft.Management.Infrastructure.CimCmdlets
         /// subscription result
         /// </para>
         /// </summary>
-        private CimSubscriptionResult result;
+        private readonly CimSubscriptionResult result;
     }
 
     /// <summary>
@@ -288,7 +288,7 @@ namespace Microsoft.Management.Infrastructure.CimCmdlets
         {
             DebugHelper.WriteLogEx();
 
-            lock(myLock)
+            lock (myLock)
             {
                 if (status == Status.Default)
                 {

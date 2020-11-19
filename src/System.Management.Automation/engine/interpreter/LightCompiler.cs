@@ -167,7 +167,7 @@ namespace System.Management.Automation.Interpreter
         internal int GotoHandler(InterpretedFrame frame, object exception, out ExceptionHandler handler)
         {
             Debug.Assert(_handlers != null, "we should have at least one handler if the method gets called");
-            handler = _handlers.FirstOrDefault(t => t.Matches(exception.GetType()));
+            handler = Array.Find(_handlers, t => t.Matches(exception.GetType()));
             if (handler == null) { return 0; }
 
             return frame.Goto(handler.LabelIndex, exception, gotoExceptionHandler: true);
@@ -221,7 +221,7 @@ namespace System.Management.Automation.Interpreter
                     return null;
                 }
                 // return the last one that is smaller
-                i = i - 1;
+                i -= 1;
             }
 
             return debugInfos[i];
@@ -288,7 +288,7 @@ namespace System.Management.Automation.Interpreter
 
         private readonly LightCompiler _parent;
 
-        private static LocalDefinition[] s_emptyLocals = Array.Empty<LocalDefinition>();
+        private static readonly LocalDefinition[] s_emptyLocals = Array.Empty<LocalDefinition>();
 
         public LightCompiler(int compilationThreshold)
         {
@@ -1297,8 +1297,7 @@ namespace System.Management.Automation.Interpreter
 
         private void DefineBlockLabels(Expression node)
         {
-            var block = node as BlockExpression;
-            if (block == null)
+            if (!(node is BlockExpression block))
             {
                 return;
             }
@@ -2034,7 +2033,7 @@ namespace System.Management.Automation.Interpreter
                 case ExpressionType.PostDecrementAssign:
                     CompileReducibleExpression(expr); break;
                 default: throw Assert.Unreachable;
-            };
+            }
             Debug.Assert(_instructions.CurrentStackDepth == startingStackDepth + (expr.Type == typeof(void) ? 0 : 1));
         }
 

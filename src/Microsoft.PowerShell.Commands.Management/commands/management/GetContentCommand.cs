@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -16,7 +16,7 @@ namespace Microsoft.PowerShell.Commands
     /// <summary>
     /// A command to get the content of an item at a specified path.
     /// </summary>
-    [Cmdlet(VerbsCommon.Get, "Content", DefaultParameterSetName = "Path", SupportsTransactions = true, HelpUri = "https://go.microsoft.com/fwlink/?LinkID=113310")]
+    [Cmdlet(VerbsCommon.Get, "Content", DefaultParameterSetName = "Path", SupportsTransactions = true, HelpUri = "https://go.microsoft.com/fwlink/?LinkID=2096490")]
     public class GetContentCommand : ContentCommandBase
     {
         #region Parameters
@@ -59,13 +59,13 @@ namespace Microsoft.PowerShell.Commands
         [Alias("Last")]
         public int Tail
         {
+            get { return _backCount; }
+
             set
             {
                 _backCount = value;
                 _tailSpecified = true;
             }
-
-            get { return _backCount; }
         }
 
         private int _backCount = -1;
@@ -142,7 +142,7 @@ namespace Microsoft.PowerShell.Commands
                         holder.Reader != null,
                         "All holders should have a reader assigned");
 
-                    if (_tailSpecified && !(holder.Reader is FileSystemContentReaderWriter))
+                    if (_tailSpecified && holder.Reader is not FileSystemContentReaderWriter)
                     {
                         string errMsg = SessionStateStrings.GetContent_TailNotSupported;
                         ErrorRecord error = new ErrorRecord(new InvalidOperationException(errMsg), "TailNotSupported", ErrorCategory.InvalidOperation, Tail);
@@ -206,7 +206,7 @@ namespace Microsoft.PowerShell.Commands
                             // I am using TotalCount - countToRead so that I don't
                             // have to worry about overflow
 
-                            if ((TotalCount > 0) && (TotalCount - countToRead < countRead))
+                            if ((TotalCount > 0) && (countToRead == 0 || (TotalCount - countToRead < countRead)))
                             {
                                 countToRead = TotalCount - countRead;
                             }
@@ -338,13 +338,9 @@ namespace Microsoft.PowerShell.Commands
                 if (ReadCount <= 0 || (ReadCount >= tailResultQueue.Count && ReadCount != 1))
                 {
                     count = tailResultQueue.Count;
-                    ArrayList outputList = new ArrayList();
-                    while (tailResultQueue.Count > 0)
-                    {
-                        outputList.Add(tailResultQueue.Dequeue());
-                    }
+
                     // Write out the content as an array of objects
-                    WriteContentObject(outputList.ToArray(), count, holder.PathInfo, currentContext);
+                    WriteContentObject(tailResultQueue.ToArray(), count, holder.PathInfo, currentContext);
                 }
                 else if (ReadCount == 1)
                 {
@@ -356,7 +352,7 @@ namespace Microsoft.PowerShell.Commands
                 {
                     while (tailResultQueue.Count >= ReadCount)
                     {
-                        ArrayList outputList = new ArrayList();
+                        var outputList = new List<object>((int)ReadCount);
                         for (int idx = 0; idx < ReadCount; idx++, count++)
                             outputList.Add(tailResultQueue.Dequeue());
                         // Write out the content as an array of objects
@@ -366,11 +362,8 @@ namespace Microsoft.PowerShell.Commands
                     int remainder = tailResultQueue.Count;
                     if (remainder > 0)
                     {
-                        ArrayList outputList = new ArrayList();
-                        for (; remainder > 0; remainder--, count++)
-                            outputList.Add(tailResultQueue.Dequeue());
                         // Write out the content as an array of objects
-                        WriteContentObject(outputList.ToArray(), count, holder.PathInfo, currentContext);
+                        WriteContentObject(tailResultQueue.ToArray(), count, holder.PathInfo, currentContext);
                     }
                 }
             }
@@ -423,4 +416,3 @@ namespace Microsoft.PowerShell.Commands
 
     }
 }
-

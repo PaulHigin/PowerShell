@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
@@ -91,7 +91,7 @@ namespace System.Management.Automation
         /// </summary>
         /// <param name="source">The input object to serialize. Serializes to a default depth of 1.</param>
         /// <returns>The serialized object, as CliXml.</returns>
-        public static string Serialize(Object source)
+        public static string Serialize(object source)
         {
             return Serialize(source, s_mshDefaultSerializationDepth);
         }
@@ -102,7 +102,7 @@ namespace System.Management.Automation
         /// <param name="source">The input object to serialize.</param>
         /// <param name="depth">The depth of the members to serialize.</param>
         /// <returns>The serialized object, as CliXml.</returns>
-        public static string Serialize(Object source, int depth)
+        public static string Serialize(object source, int depth)
         {
             // Create an xml writer
             StringBuilder sb = new StringBuilder();
@@ -174,7 +174,7 @@ namespace System.Management.Automation
         /// <summary>
         /// Default depth of serialization.
         /// </summary>
-        private static int s_mshDefaultSerializationDepth = 1;
+        private static readonly int s_mshDefaultSerializationDepth = 1;
     }
 
     /// <summary>
@@ -218,12 +218,12 @@ namespace System.Management.Automation
         {
             if (writer == null)
             {
-                throw PSTraceSource.NewArgumentException("writer");
+                throw PSTraceSource.NewArgumentException(nameof(writer));
             }
 
             if (context == null)
             {
-                throw PSTraceSource.NewArgumentException("context");
+                throw PSTraceSource.NewArgumentException(nameof(context));
             }
 
             _serializer = new InternalSerializer(writer, context);
@@ -322,7 +322,7 @@ namespace System.Management.Automation
         /// is used by PriorityReceivedDataCollection (remoting) to process incoming data from the
         /// remote end. A value of Null means that the max memory is unlimited.
         /// </summary>
-        internal int? MaximumAllowedMemory { set; get; }
+        internal int? MaximumAllowedMemory { get; set; }
 
         /// <summary>
         /// Logs that memory used by deserialized objects is not related to the size of input xml.
@@ -346,7 +346,7 @@ namespace System.Management.Automation
                     throw new XmlException(message);
                 }
 
-                _totalDataProcessedSoFar = _totalDataProcessedSoFar + amountOfExtraMemory;
+                _totalDataProcessedSoFar += amountOfExtraMemory;
             }
         }
 
@@ -355,7 +355,7 @@ namespace System.Management.Automation
         internal readonly DeserializationOptions options;
         internal readonly PSRemotingCryptoHelper cryptoHelper;
 
-        internal static int MaxItemsInCimClassCache = 100;
+        internal static readonly int MaxItemsInCimClassCache = 100;
         internal readonly CimClassDeserializationCache<CimClassSerializationId> cimClassSerializationIdCache = new CimClassDeserializationCache<CimClassSerializationId>();
     }
 
@@ -484,7 +484,7 @@ namespace System.Management.Automation
         {
             if (reader == null)
             {
-                throw PSTraceSource.NewArgumentNullException("reader");
+                throw PSTraceSource.NewArgumentNullException(nameof(reader));
             }
 
             _reader = reader;
@@ -569,7 +569,7 @@ namespace System.Management.Automation
 
         internal bool Done()
         {
-            if (_done == false)
+            if (!_done)
             {
                 if (DeserializationOptions.NoRootElement == (_context.options & DeserializationOptions.NoRootElement))
                 {
@@ -666,7 +666,7 @@ namespace System.Management.Automation
         {
             if (type == null)
             {
-                throw PSTraceSource.NewArgumentNullException("type");
+                throw PSTraceSource.NewArgumentNullException(nameof(type));
             }
 
             if (o == null)
@@ -687,7 +687,7 @@ namespace System.Management.Automation
         {
             if (type == null)
             {
-                throw PSTraceSource.NewArgumentNullException("type");
+                throw PSTraceSource.NewArgumentNullException(nameof(type));
             }
 
             if (o == null)
@@ -1543,7 +1543,7 @@ namespace System.Management.Automation
             _writer.WriteEndElement();
         }
 
-        private static Lazy<CimSerializer> s_cimSerializer = new Lazy<CimSerializer>(CimSerializer.Create);
+        private static readonly Lazy<CimSerializer> s_cimSerializer = new Lazy<CimSerializer>(CimSerializer.Create);
 
         private void PrepareCimInstanceForSerialization(PSObject psObject, CimInstance cimInstance)
         {
@@ -1888,6 +1888,7 @@ namespace System.Management.Automation
         }
 
         private Collection<CollectionEntry<PSMemberInfo>> _extendedMembersCollection;
+
         private Collection<CollectionEntry<PSMemberInfo>> ExtendedMembersCollection
         {
             get
@@ -1899,6 +1900,7 @@ namespace System.Management.Automation
         }
 
         private Collection<CollectionEntry<PSPropertyInfo>> _allPropertiesCollection;
+
         private Collection<CollectionEntry<PSPropertyInfo>> AllPropertiesCollection
         {
             get
@@ -1980,8 +1982,7 @@ namespace System.Management.Automation
 
             foreach (PSMemberInfo info in propertyCollection)
             {
-                PSProperty prop = info as PSProperty;
-                if (prop == null)
+                if (!(info is PSProperty prop))
                 {
                     continue;
                 }
@@ -2309,7 +2310,7 @@ namespace System.Management.Automation
                 return 1;
             }
 
-            if (0 != (_context.options & SerializationOptions.UseDepthFromTypes))
+            if ((_context.options & SerializationOptions.UseDepthFromTypes) != 0)
             {
                 // get the depth from the PSObject
                 // NOTE: we assume that the depth out of the PSObject is > 0
@@ -2329,7 +2330,7 @@ namespace System.Management.Automation
                 }
             }
 
-            if (0 != (_context.options & SerializationOptions.PreserveSerializationSettingOfOriginal))
+            if ((_context.options & SerializationOptions.PreserveSerializationSettingOfOriginal) != 0)
             {
                 if ((pso.IsDeserialized) && (depth <= 0))
                 {
@@ -2583,7 +2584,7 @@ namespace System.Management.Automation
             Dbg.Assert(source != null, "caller should have validated the information");
             Dbg.Assert(entry != null, "caller should have validated the information");
 
-            WriteRawString(serializer, streamName, property, XmlConvert.ToString((Double)source), entry);
+            WriteRawString(serializer, streamName, property, XmlConvert.ToString((double)source), entry);
         }
 
         /// <summary>
@@ -2891,7 +2892,7 @@ namespace System.Management.Automation
                 }
             }
 
-            return new String(result, 0, rlen);
+            return new string(result, 0, rlen);
         }
 
         /// <summary>
@@ -3004,7 +3005,7 @@ namespace System.Management.Automation
 
         #region Known CIMTypes
 
-        private static Lazy<HashSet<Type>> s_knownCimArrayTypes = new Lazy<HashSet<Type>>(
+        private static readonly Lazy<HashSet<Type>> s_knownCimArrayTypes = new Lazy<HashSet<Type>>(
             () =>
                 new HashSet<Type>
                 {
@@ -3012,14 +3013,14 @@ namespace System.Management.Automation
                     typeof(byte),
                     typeof(char),
                     typeof(DateTime),
-                    typeof(Decimal),
-                    typeof(Double),
+                    typeof(decimal),
+                    typeof(double),
                     typeof(Int16),
                     typeof(Int32),
                     typeof(Int64),
-                    typeof(SByte),
+                    typeof(sbyte),
                     typeof(Single),
-                    typeof(String),
+                    typeof(string),
                     typeof(TimeSpan),
                     typeof(UInt16),
                     typeof(UInt32),
@@ -3110,7 +3111,7 @@ namespace System.Management.Automation
             if (_reader.NodeType != XmlNodeType.Element)
             {
                 throw NewXmlException(Serialization.InvalidNodeType, null,
-                                       _reader.NodeType.ToString(), XmlNodeType.Element.ToString());
+                                       _reader.NodeType.ToString(), nameof(XmlNodeType.Element));
             }
 
             s_trace.WriteLine("Processing start node {0}", _reader.LocalName);
@@ -3296,7 +3297,7 @@ namespace System.Management.Automation
             return true;
         }
 
-        private static Lazy<CimDeserializer> s_cimDeserializer = new Lazy<CimDeserializer>(CimDeserializer.Create);
+        private static readonly Lazy<CimDeserializer> s_cimDeserializer = new Lazy<CimDeserializer>(CimDeserializer.Create);
 
         private CimClass RehydrateCimClass(PSPropertyInfo classMetadataProperty)
         {
@@ -3329,32 +3330,28 @@ namespace System.Management.Automation
 
                 PSObject psoDeserializedClass = PSObject.AsPSObject(deserializedClass);
 
-                PSPropertyInfo namespaceProperty = psoDeserializedClass.InstanceMembers[InternalDeserializer.CimNamespaceProperty] as PSPropertyInfo;
-                if (namespaceProperty == null)
+                if (!(psoDeserializedClass.InstanceMembers[InternalDeserializer.CimNamespaceProperty] is PSPropertyInfo namespaceProperty))
                 {
                     return null;
                 }
 
                 string cimNamespace = namespaceProperty.Value as string;
 
-                PSPropertyInfo classNameProperty = psoDeserializedClass.InstanceMembers[InternalDeserializer.CimClassNameProperty] as PSPropertyInfo;
-                if (classNameProperty == null)
+                if (!(psoDeserializedClass.InstanceMembers[InternalDeserializer.CimClassNameProperty] is PSPropertyInfo classNameProperty))
                 {
                     return null;
                 }
 
                 string cimClassName = classNameProperty.Value as string;
 
-                PSPropertyInfo computerNameProperty = psoDeserializedClass.InstanceMembers[InternalDeserializer.CimServerNameProperty] as PSPropertyInfo;
-                if (computerNameProperty == null)
+                if (!(psoDeserializedClass.InstanceMembers[InternalDeserializer.CimServerNameProperty] is PSPropertyInfo computerNameProperty))
                 {
                     return null;
                 }
 
                 string computerName = computerNameProperty.Value as string;
 
-                PSPropertyInfo hashCodeProperty = psoDeserializedClass.InstanceMembers[InternalDeserializer.CimHashCodeProperty] as PSPropertyInfo;
-                if (hashCodeProperty == null)
+                if (!(psoDeserializedClass.InstanceMembers[InternalDeserializer.CimHashCodeProperty] is PSPropertyInfo hashCodeProperty))
                 {
                     return null;
                 }
@@ -3370,7 +3367,7 @@ namespace System.Management.Automation
                     hashCodeObject = ((PSObject)hashCodeObject).BaseObject;
                 }
 
-                if (!(hashCodeObject is int))
+                if (hashCodeObject is not int)
                 {
                     return null;
                 }
@@ -3424,7 +3421,7 @@ namespace System.Management.Automation
 
         private PSObject RehydrateCimInstance(PSObject deserializedObject)
         {
-            if (!(deserializedObject.BaseObject is PSCustomObject))
+            if (deserializedObject.BaseObject is not PSCustomObject)
             {
                 return deserializedObject;
             }
@@ -3471,8 +3468,7 @@ namespace System.Management.Automation
             {
                 foreach (PSMemberInfo deserializedMemberInfo in deserializedObject.AdaptedMembers)
                 {
-                    PSPropertyInfo deserializedProperty = deserializedMemberInfo as PSPropertyInfo;
-                    if (deserializedProperty == null)
+                    if (!(deserializedMemberInfo is PSPropertyInfo deserializedProperty))
                     {
                         continue;
                     }
@@ -3492,8 +3488,7 @@ namespace System.Management.Automation
             // process properties that were originally "extended" properties
             foreach (PSMemberInfo deserializedMemberInfo in deserializedObject.InstanceMembers)
             {
-                PSPropertyInfo deserializedProperty = deserializedMemberInfo as PSPropertyInfo;
-                if (deserializedProperty == null)
+                if (!(deserializedMemberInfo is PSPropertyInfo deserializedProperty))
                 {
                     continue;
                 }
@@ -3620,7 +3615,7 @@ namespace System.Management.Automation
             PSObject dso = ReadAttributeAndCreatePSObject();
 
             // Read start element tag
-            if (ReadStartElementAndHandleEmpty(SerializationStrings.PSObjectTag) == false)
+            if (!ReadStartElementAndHandleEmpty(SerializationStrings.PSObjectTag))
             {
                 // Empty element.
                 return dso;
@@ -4017,7 +4012,7 @@ namespace System.Management.Automation
                     }
 
                     string name = ReadNameAttribute();
-                    if (string.Compare(name, SerializationStrings.DictionaryKey, StringComparison.OrdinalIgnoreCase) != 0)
+                    if (!string.Equals(name, SerializationStrings.DictionaryKey, StringComparison.OrdinalIgnoreCase))
                     {
                         throw NewXmlException(Serialization.InvalidDictionaryKeyName, null);
                     }
@@ -4035,7 +4030,7 @@ namespace System.Management.Automation
                     }
 
                     name = ReadNameAttribute();
-                    if (string.Compare(name, SerializationStrings.DictionaryValue, StringComparison.OrdinalIgnoreCase) != 0)
+                    if (!string.Equals(name, SerializationStrings.DictionaryValue, StringComparison.OrdinalIgnoreCase))
                     {
                         throw NewXmlException(Serialization.InvalidDictionaryValueName, null);
                     }
@@ -4740,7 +4735,7 @@ namespace System.Management.Automation
         {
             Dbg.Assert(!string.IsNullOrEmpty(tag), "Caller should validate the parameter");
             return (_reader.LocalName == tag) &&
-                ((0 != (_context.options & DeserializationOptions.NoNamespace)) ||
+                (((_context.options & DeserializationOptions.NoNamespace) != 0) ||
                  (_reader.NamespaceURI == SerializationStrings.MonadNamespace));
         }
 
@@ -4760,7 +4755,7 @@ namespace System.Management.Automation
 
             // This takes care of the case: <tag></tag> or <tag>  </tag>. In
             // this case isEmpty is false.
-            if (isEmpty == false && _reader.NodeType == XmlNodeType.EndElement)
+            if (!isEmpty && _reader.NodeType == XmlNodeType.EndElement)
             {
                 ReadEndElement();
                 isEmpty = true;
@@ -5155,13 +5150,13 @@ namespace System.Management.Automation
                                 InternalSerializer.WriteBoolean,
                                 InternalDeserializer.DeserializeBoolean),
 
-            new TypeSerializationInfo(typeof(Byte),
+            new TypeSerializationInfo(typeof(byte),
                                 SerializationStrings.UnsignedByteTag,
                                 SerializationStrings.UnsignedByteTag,
                                 null,
                                 InternalDeserializer.DeserializeByte),
 
-            new TypeSerializationInfo(typeof(Char),
+            new TypeSerializationInfo(typeof(char),
                                 SerializationStrings.CharTag,
                                 SerializationStrings.CharTag,
                                 InternalSerializer.WriteChar,
@@ -5173,13 +5168,13 @@ namespace System.Management.Automation
                                 InternalSerializer.WriteDateTime,
                                 InternalDeserializer.DeserializeDateTime),
 
-            new TypeSerializationInfo(typeof(Decimal),
+            new TypeSerializationInfo(typeof(decimal),
                                 SerializationStrings.DecimalTag,
                                 SerializationStrings.DecimalTag,
                                 null,
                                 InternalDeserializer.DeserializeDecimal),
 
-            new TypeSerializationInfo(typeof(Double),
+            new TypeSerializationInfo(typeof(double),
                                 SerializationStrings.DoubleTag,
                                 SerializationStrings.DoubleTag,
                                 InternalSerializer.WriteDouble,
@@ -5208,7 +5203,7 @@ namespace System.Management.Automation
                                 null,
                                 InternalDeserializer.DeserializeInt64),
 
-            new TypeSerializationInfo(typeof(SByte),
+            new TypeSerializationInfo(typeof(sbyte),
                                 SerializationStrings.ByteTag,
                                 SerializationStrings.ByteTag,
                                 null,
@@ -5226,7 +5221,7 @@ namespace System.Management.Automation
                                 InternalSerializer.WriteScriptBlock,
                                 InternalDeserializer.DeserializeScriptBlock),
 
-            new TypeSerializationInfo(typeof(String),
+            new TypeSerializationInfo(typeof(string),
                                 SerializationStrings.StringTag,
                                 SerializationStrings.StringTag,
                                 InternalSerializer.WriteEncodedString,
@@ -5905,7 +5900,7 @@ namespace System.Management.Automation
         {
             if (other == null)
             {
-                throw new ArgumentNullException("other");
+                throw new ArgumentNullException(nameof(other));
             }
 
             foreach (DictionaryEntry entry in other)
@@ -5952,19 +5947,19 @@ namespace System.Management.Automation
         }
 
         private static readonly Type[] s_handshakeFriendlyTypes = new Type[] {
-                typeof(Boolean),
-                typeof(Byte),
-                typeof(Char),
+                typeof(bool),
+                typeof(byte),
+                typeof(char),
                 typeof(DateTime),
-                typeof(Decimal),
-                typeof(Double),
+                typeof(decimal),
+                typeof(double),
                 typeof(Guid),
                 typeof(Int32),
                 typeof(Int64),
-                typeof(SByte),
+                typeof(sbyte),
                 typeof(Single),
                 // typeof(ScriptBlock) - don't want ScriptBlocks, because they are deserialized into strings
-                typeof(String),
+                typeof(string),
                 typeof(TimeSpan),
                 typeof(UInt16),
                 typeof(UInt32),
@@ -6125,7 +6120,7 @@ namespace System.Management.Automation
         /// </summary>
         /// <param name="key">The key of the element to add.</param>
         /// <param name="value">The value of the element to add.</param>
-        public void Add(string key, Boolean[] value)
+        public void Add(string key, bool[] value)
         {
             this.Add((object)key, (object)value);
         }
@@ -6135,7 +6130,7 @@ namespace System.Management.Automation
         /// </summary>
         /// <param name="key">The key of the element to add.</param>
         /// <param name="value">The value of the element to add.</param>
-        public void Add(string key, Byte value)
+        public void Add(string key, byte value)
         {
             this.Add((object)key, (object)value);
         }
@@ -6215,7 +6210,7 @@ namespace System.Management.Automation
         /// </summary>
         /// <param name="key">The key of the element to add.</param>
         /// <param name="value">The value of the element to add.</param>
-        public void Add(string key, Double value)
+        public void Add(string key, double value)
         {
             this.Add((object)key, (object)value);
         }
@@ -6225,7 +6220,7 @@ namespace System.Management.Automation
         /// </summary>
         /// <param name="key">The key of the element to add.</param>
         /// <param name="value">The value of the element to add.</param>
-        public void Add(string key, Double[] value)
+        public void Add(string key, double[] value)
         {
             this.Add((object)key, (object)value);
         }
@@ -6295,7 +6290,7 @@ namespace System.Management.Automation
         /// </summary>
         /// <param name="key">The key of the element to add.</param>
         /// <param name="value">The value of the element to add.</param>
-        public void Add(string key, SByte value)
+        public void Add(string key, sbyte value)
         {
             this.Add((object)key, (object)value);
         }
@@ -6305,7 +6300,7 @@ namespace System.Management.Automation
         /// </summary>
         /// <param name="key">The key of the element to add.</param>
         /// <param name="value">The value of the element to add.</param>
-        public void Add(string key, SByte[] value)
+        public void Add(string key, sbyte[] value)
         {
             this.Add((object)key, (object)value);
         }
@@ -6691,14 +6686,14 @@ namespace Microsoft.PowerShell
         {
             if (destinationType == null)
             {
-                throw PSTraceSource.NewArgumentNullException("destinationType");
+                throw PSTraceSource.NewArgumentNullException(nameof(destinationType));
             }
 
             if (sourceValue == null)
             {
                 throw new PSInvalidCastException(
                     "InvalidCastWhenRehydratingFromNull",
-                    PSTraceSource.NewArgumentNullException("sourceValue"),
+                    PSTraceSource.NewArgumentNullException(nameof(sourceValue)),
                     ExtendedTypeSystem.InvalidCastFromNull,
                     destinationType.ToString());
             }
@@ -7096,7 +7091,7 @@ namespace Microsoft.PowerShell
 
         internal static CommandBreakpoint RehydrateCommandBreakpoint(PSObject pso)
         {
-            string script = GetPropertyValue<string>(pso, "Script", RehydrationFlags.MissingPropertyOk);
+            string script = GetPropertyValue<string>(pso, "Script", RehydrationFlags.MissingPropertyOk | RehydrationFlags.NullValueOk);
             string command = GetPropertyValue<string>(pso, "Command");
             int id = GetPropertyValue<int>(pso, "Id");
             bool enabled = GetPropertyValue<bool>(pso, "Enabled");
@@ -7111,7 +7106,7 @@ namespace Microsoft.PowerShell
 
         internal static VariableBreakpoint RehydrateVariableBreakpoint(PSObject pso)
         {
-            string script = GetPropertyValue<string>(pso, "Script", RehydrationFlags.MissingPropertyOk);
+            string script = GetPropertyValue<string>(pso, "Script", RehydrationFlags.MissingPropertyOk | RehydrationFlags.NullValueOk);
             string variableName = GetPropertyValue<string>(pso, "Variable");
             int id = GetPropertyValue<int>(pso, "Id");
             bool enabled = GetPropertyValue<bool>(pso, "Enabled");
@@ -7274,13 +7269,12 @@ namespace Microsoft.PowerShell
         {
             if (instance == null)
             {
-                throw PSTraceSource.NewArgumentNullException("instance");
+                throw PSTraceSource.NewArgumentNullException(nameof(instance));
             }
 
-            ParameterSetMetadata parameterSetMetadata = instance.BaseObject as ParameterSetMetadata;
-            if (parameterSetMetadata == null)
+            if (!(instance.BaseObject is ParameterSetMetadata parameterSetMetadata))
             {
-                throw PSTraceSource.NewArgumentNullException("instance");
+                throw PSTraceSource.NewArgumentNullException(nameof(instance));
             }
 
             return (UInt32)(parameterSetMetadata.Flags);
@@ -7296,13 +7290,12 @@ namespace Microsoft.PowerShell
         {
             if (instance == null)
             {
-                throw PSTraceSource.NewArgumentNullException("instance");
+                throw PSTraceSource.NewArgumentNullException(nameof(instance));
             }
 
-            DebuggerStopEventArgs dbgStopEventArgs = instance.BaseObject as DebuggerStopEventArgs;
-            if (dbgStopEventArgs == null)
+            if (!(instance.BaseObject is DebuggerStopEventArgs dbgStopEventArgs))
             {
-                throw PSTraceSource.NewArgumentNullException("instance");
+                throw PSTraceSource.NewArgumentNullException(nameof(instance));
             }
 
             if (dbgStopEventArgs.InvocationInfo == null)
@@ -7474,7 +7467,7 @@ namespace Microsoft.PowerShell
             }
             else
             {
-                throw PSTraceSource.NewArgumentException("deserializedItem");
+                throw PSTraceSource.NewArgumentException(nameof(deserializedItem));
             }
 
             return result;
@@ -7556,13 +7549,12 @@ namespace Microsoft.PowerShell
         {
             if (instance == null)
             {
-                throw PSTraceSource.NewArgumentNullException("instance");
+                throw PSTraceSource.NewArgumentNullException(nameof(instance));
             }
 
-            FormatViewDefinition formatViewDefinition = instance.BaseObject as FormatViewDefinition;
-            if (formatViewDefinition == null)
+            if (!(instance.BaseObject is FormatViewDefinition formatViewDefinition))
             {
-                throw PSTraceSource.NewArgumentNullException("instance");
+                throw PSTraceSource.NewArgumentNullException(nameof(instance));
             }
 
             return formatViewDefinition.InstanceId;
@@ -7612,4 +7604,3 @@ namespace Microsoft.PowerShell
         #endregion
     }
 }
-

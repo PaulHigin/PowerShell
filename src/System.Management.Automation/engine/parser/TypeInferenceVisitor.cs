@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System.Collections;
@@ -109,7 +109,7 @@ namespace System.Management.Automation
         }
     }
 
-    class PSTypeNameComparer : IEqualityComparer<PSTypeName>
+    internal class PSTypeNameComparer : IEqualityComparer<PSTypeName>
     {
         public bool Equals(PSTypeName x, PSTypeName y)
         {
@@ -316,8 +316,7 @@ namespace System.Management.Automation
             // iterate through bases/interfaces
             foreach (var baseType in typename.TypeDefinitionAst.BaseTypes)
             {
-                var baseTypeName = baseType.TypeName as TypeName;
-                if (baseTypeName == null)
+                if (!(baseType.TypeName is TypeName baseTypeName))
                 {
                     continue;
                 }
@@ -1231,7 +1230,7 @@ namespace System.Management.Automation
                 }
 
                 var memberNameAndTypes = GetMemberNameAndTypeFromProperties(prevType, IsInPropertyArgument);
-                if (!memberNameAndTypes.Any())
+                if (memberNameAndTypes.Count == 0)
                 {
                     continue;
                 }
@@ -1328,7 +1327,7 @@ namespace System.Management.Automation
                             switch (propertyNameOrPattern)
                             {
                                 case string propertyName:
-                                    if (string.Compare(name, propertyName, StringComparison.OrdinalIgnoreCase) == 0)
+                                    if (string.Equals(name, propertyName, StringComparison.OrdinalIgnoreCase))
                                     {
                                         return includeMatchedProperties;
                                     }
@@ -1484,8 +1483,7 @@ namespace System.Management.Automation
             var expression = memberExpressionAst.Expression;
 
             // If the member name isn't simple, don't even try.
-            var memberAsStringConst = memberCommandElement as StringConstantExpressionAst;
-            if (memberAsStringConst == null)
+            if (!(memberCommandElement is StringConstantExpressionAst memberAsStringConst))
             {
                 return Array.Empty<PSTypeName>();
             }
@@ -1728,8 +1726,7 @@ namespace System.Management.Automation
             PSTypeName[] exprType;
             if (isStatic)
             {
-                var exprAsType = expression as TypeExpressionAst;
-                if (exprAsType == null)
+                if (!(expression is TypeExpressionAst exprAsType))
                 {
                     return null;
                 }
@@ -2281,8 +2278,7 @@ namespace System.Management.Automation
         private void GetInferredTypeFromScriptBlockParameter(AstParameterArgumentPair argument, List<PSTypeName> inferredTypes)
         {
             var argumentPair = argument as AstPair;
-            var scriptBlockExpressionAst = argumentPair?.Argument as ScriptBlockExpressionAst;
-            if (scriptBlockExpressionAst == null)
+            if (!(argumentPair?.Argument is ScriptBlockExpressionAst scriptBlockExpressionAst))
             {
                 return;
             }
@@ -2326,6 +2322,19 @@ namespace System.Management.Automation
             return dynamicKeywordAst.CommandElements[0].Accept(this);
         }
 
+        object ICustomAstVisitor2.VisitTernaryExpression(TernaryExpressionAst ternaryExpressionAst)
+        {
+            return InferTypes(ternaryExpressionAst.IfTrue).Concat(InferTypes(ternaryExpressionAst.IfFalse));
+        }
+
+        object ICustomAstVisitor2.VisitPipelineChain(PipelineChainAst pipelineChainAst)
+        {
+            var types = new List<PSTypeName>();
+            types.AddRange(InferTypes(pipelineChainAst.LhsPipelineChain));
+            types.AddRange(InferTypes(pipelineChainAst.RhsPipeline));
+            return GetArrayType(types);
+        }
+
         private static CommandBaseAst GetPreviousPipelineCommand(CommandAst commandAst)
         {
             var pipe = (PipelineAst)commandAst.Parent;
@@ -2334,7 +2343,7 @@ namespace System.Management.Automation
         }
     }
 
-    static class TypeInferenceExtension
+    internal static class TypeInferenceExtension
     {
         public static bool EqualsOrdinalIgnoreCase(this string s, string t)
         {
@@ -2403,7 +2412,7 @@ namespace System.Management.Automation
                 lhs = convertExpr.Child;
             }
 
-            if (!(lhs is VariableExpressionAst varExpr))
+            if (lhs is not VariableExpressionAst varExpr)
             {
                 return false;
             }

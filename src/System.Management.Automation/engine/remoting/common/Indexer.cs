@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System.Collections;
@@ -16,12 +16,12 @@ namespace System.Management.Automation.Remoting
         /// <summary>
         /// Current.
         /// </summary>
-        private int[] _current;
+        private readonly int[] _current;
 
         /// <summary>
         /// Lengths.
         /// </summary>
-        private int[] _lengths;
+        private readonly int[] _lengths;
 
         /// <summary>
         /// Current.

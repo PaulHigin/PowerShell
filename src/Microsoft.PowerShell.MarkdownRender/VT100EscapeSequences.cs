@@ -1,13 +1,8 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
-using System.IO;
 using System.Management.Automation;
-
-using Markdig;
-using Markdig.Renderers;
-using Markdig.Syntax;
 
 namespace Microsoft.PowerShell.MarkdownRender
 {
@@ -273,11 +268,13 @@ namespace Microsoft.PowerShell.MarkdownRender
     public class VT100EscapeSequences
     {
         private const char Esc = (char)0x1B;
-        private string endSequence = Esc + "[0m";
+
+        private readonly string endSequence = Esc + "[0m";
 
         // For code blocks, [500@ make sure that the whole line has background color.
         private const string LongBackgroundCodeBlock = "[500@";
-        private PSMarkdownOptionInfo options;
+
+        private readonly PSMarkdownOptionInfo options;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="VT100EscapeSequences"/> class.
@@ -287,7 +284,7 @@ namespace Microsoft.PowerShell.MarkdownRender
         {
             if (optionInfo == null)
             {
-                throw new ArgumentNullException("optionInfo");
+                throw new ArgumentNullException(nameof(optionInfo));
             }
 
             options = optionInfo;

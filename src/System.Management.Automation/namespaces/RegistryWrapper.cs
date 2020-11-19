@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 /*
@@ -30,11 +30,13 @@ namespace Microsoft.PowerShell.Commands
         object GetValue(string name);
         object GetValue(string name, object defaultValue, RegistryValueOptions options);
         RegistryValueKind GetValueKind(string name);
+
         object RegistryKey { get; }
 
         void SetAccessControl(ObjectSecurity securityDescriptor);
         ObjectSecurity GetAccessControl(AccessControlSections includeSections);
         void Close();
+
         string Name { get; }
 
         int SubKeyCount { get; }
@@ -112,7 +114,7 @@ namespace Microsoft.PowerShell.Commands
 
     internal class RegistryWrapper : IRegistryWrapper
     {
-        private RegistryKey _regKey;
+        private readonly RegistryKey _regKey;
 
         internal RegistryWrapper(RegistryKey regKey)
         {
@@ -244,8 +246,8 @@ namespace Microsoft.PowerShell.Commands
 
     internal class TransactedRegistryWrapper : IRegistryWrapper
     {
-        private TransactedRegistryKey _txRegKey;
-        private CmdletProvider _provider;
+        private readonly TransactedRegistryKey _txRegKey;
+        private readonly CmdletProvider _provider;
 
         internal TransactedRegistryWrapper(TransactedRegistryKey txRegKey, CmdletProvider provider)
         {

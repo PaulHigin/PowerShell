@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
@@ -333,7 +333,7 @@ namespace System.Management.Automation.Runspaces
         {
             if (runspaceStateInfo == null)
             {
-                throw PSTraceSource.NewArgumentNullException("runspaceStateInfo");
+                throw PSTraceSource.NewArgumentNullException(nameof(runspaceStateInfo));
             }
 
             RunspaceStateInfo = runspaceStateInfo;
@@ -450,9 +450,9 @@ namespace System.Management.Automation.Runspaces
         #region Private Data
 
         private static int s_globalId;
-        private Stack<PowerShell> _runningPowerShells;
+        private readonly Stack<PowerShell> _runningPowerShells;
         private PowerShell _baseRunningPowerShell;
-        private object _syncObject;
+        private readonly object _syncObject;
 
         #endregion
 
@@ -574,7 +574,7 @@ namespace System.Management.Automation.Runspaces
                     {
                         return
                             (localPipeline.NestedPipelineExecutionThread.ManagedThreadId
-                            == Threading.Thread.CurrentThread.ManagedThreadId);
+                            == Environment.CurrentManagedThreadId);
                     }
                 }
 
@@ -582,7 +582,6 @@ namespace System.Management.Automation.Runspaces
             }
         }
 
-#if !CORECLR // No ApartmentState In CoreCLR
         internal const ApartmentState DefaultApartmentState = ApartmentState.Unknown;
 
         /// <summary>
@@ -613,7 +612,6 @@ namespace System.Management.Automation.Runspaces
         }
 
         private ApartmentState apartmentState = Runspace.DefaultApartmentState;
-#endif
 
         /// <summary>
         /// This property determines whether a new thread is create for each invocation.
@@ -652,7 +650,7 @@ namespace System.Management.Automation.Runspaces
         {
             get
             {
-                return !(this is LocalRunspace || ConnectionInfo == null);
+                return this is not LocalRunspace && ConnectionInfo != null;
             }
         }
 
@@ -760,11 +758,7 @@ namespace System.Management.Automation.Runspaces
         /// <summary>
         /// Gets the Runspace Id.
         /// </summary>
-        public int Id
-        {
-            get;
-            private set;
-        }
+        public int Id { get; }
 
         /// <summary>
         /// Returns protocol version that the remote server uses for PS remoting.
@@ -807,8 +801,8 @@ namespace System.Management.Automation.Runspaces
             }
         }
 
-        private static SortedDictionary<int, WeakReference<Runspace>> s_runspaceDictionary;
-        private static object s_syncObject;
+        private static readonly SortedDictionary<int, WeakReference<Runspace>> s_runspaceDictionary;
+        private static readonly object s_syncObject;
 
         /// <summary>
         /// Returns a read only list of runspaces.
@@ -949,7 +943,8 @@ namespace System.Management.Automation.Runspaces
                         case PipelineState.Completed:
                         case PipelineState.Stopped:
                         case PipelineState.Failed:
-                            if (this.InNestedPrompt || !(this is RemoteRunspace) && this.Debugger.InBreakpoint)
+                            if (this.InNestedPrompt
+                                || (this is not RemoteRunspace && this.Debugger.InBreakpoint))
                             {
                                 this.RunspaceAvailability = RunspaceAvailability.AvailableForNestedCommand;
                             }
@@ -1673,7 +1668,8 @@ namespace System.Management.Automation.Runspaces
         {
         }
 
-        private RunspaceBase _runspace;
+        private readonly RunspaceBase _runspace;
+
         internal SessionStateProxy(RunspaceBase runspace)
         {
             Dbg.Assert(runspace != null, "Caller should validate the parameter");
@@ -1702,7 +1698,7 @@ namespace System.Management.Automation.Runspaces
         {
             if (name == null)
             {
-                throw PSTraceSource.NewArgumentNullException("name");
+                throw PSTraceSource.NewArgumentNullException(nameof(name));
             }
 
             _runspace.SetVariable(name, value);
@@ -1730,7 +1726,7 @@ namespace System.Management.Automation.Runspaces
         {
             if (name == null)
             {
-                throw PSTraceSource.NewArgumentNullException("name");
+                throw PSTraceSource.NewArgumentNullException(nameof(name));
             }
 
             if (name.Equals(string.Empty))

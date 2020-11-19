@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
@@ -279,7 +279,7 @@ namespace System.Management.Automation
             return propertyTypeName ?? "System.Object";
         }
 
-        private PSPropertyAdapter _externalAdapter;
+        private readonly PSPropertyAdapter _externalAdapter;
     }
 
     /// <summary>
@@ -298,7 +298,7 @@ namespace System.Management.Automation
         {
             if (baseObject == null)
             {
-                throw new ArgumentNullException("baseObject");
+                throw new ArgumentNullException(nameof(baseObject));
             }
 
             Collection<string> types = new Collection<string>();

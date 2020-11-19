@@ -1,9 +1,8 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Management.Automation;
 using System.Management.Automation.Internal;
@@ -11,8 +10,6 @@ using System.Security;
 using System.Threading.Tasks;
 
 using Microsoft.PowerShell.MarkdownRender;
-
-using Dbg = System.Management.Automation;
 
 namespace Microsoft.PowerShell.Commands
 {
@@ -58,6 +55,7 @@ namespace Microsoft.PowerShell.Commands
         private const string PathParameterSet = "PathParamSet";
         private const string LiteralPathParameterSet = "LiteralParamSet";
         private const string InputObjParamSet = "InputObjParamSet";
+
         private MarkdownConversionType _conversionType = MarkdownConversionType.HTML;
         private PSMarkdownOptionInfo _mdOption = null;
 
