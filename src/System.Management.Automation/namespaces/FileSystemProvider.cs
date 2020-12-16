@@ -1311,35 +1311,36 @@ namespace Microsoft.PowerShell.Commands
                     // If we want to retrieve the file streams, retrieve them.
                     if (retrieveStreams)
                     {
-                        if (!isContainer)
+                        foreach (string desiredStream in dynamicParameters.Stream)
                         {
-                            foreach (string desiredStream in dynamicParameters.Stream)
+                            // See that it matches the name specified
+                            WildcardPattern p = WildcardPattern.Get(desiredStream, WildcardOptions.IgnoreCase | WildcardOptions.CultureInvariant);
+                            bool foundStream = false;
+
+                            foreach (AlternateStreamData stream in AlternateDataStreamUtilities.GetStreams(result.FullName))
                             {
-                                // See that it matches the name specified
-                                WildcardPattern p = WildcardPattern.Get(desiredStream, WildcardOptions.IgnoreCase | WildcardOptions.CultureInvariant);
-                                bool foundStream = false;
-
-                                foreach (AlternateStreamData stream in AlternateDataStreamUtilities.GetStreams(result.FullName))
+                                if (!p.IsMatch(stream.Stream))
                                 {
-                                    if (!p.IsMatch(stream.Stream)) { continue; }
-
-                                    string outputPath = result.FullName + ":" + stream.Stream;
-                                    WriteItemObject(stream, outputPath, isContainer);
-                                    foundStream = true;
+                                    continue;
                                 }
 
-                                if ((!WildcardPattern.ContainsWildcardCharacters(desiredStream)) && (!foundStream))
-                                {
-                                    string errorMessage = StringUtil.Format(
-                                        FileSystemProviderStrings.AlternateDataStreamNotFound, desiredStream, result.FullName);
-                                    Exception e = new FileNotFoundException(errorMessage, result.FullName);
+                                string outputPath = result.FullName + ":" + stream.Stream;
+                                // Alternate data streams can never be containers.
+                                WriteItemObject(stream, outputPath, isContainer: false);
+                                foundStream = true;
+                            }
 
-                                    WriteError(new ErrorRecord(
-                                        e,
-                                        "AlternateDataStreamNotFound",
-                                        ErrorCategory.ObjectNotFound,
-                                        path));
-                                }
+                            if ((!WildcardPattern.ContainsWildcardCharacters(desiredStream)) && (!foundStream))
+                            {
+                                string errorMessage = StringUtil.Format(
+                                    FileSystemProviderStrings.AlternateDataStreamNotFound, desiredStream, result.FullName);
+                                Exception e = new FileNotFoundException(errorMessage, result.FullName);
+
+                                WriteError(new ErrorRecord(
+                                    e,
+                                    "AlternateDataStreamNotFound",
+                                    ErrorCategory.ObjectNotFound,
+                                    path));
                             }
                         }
                     }
@@ -2019,7 +2020,7 @@ namespace Microsoft.PowerShell.Commands
                 FileAttributes fileAttributes = fileSystemInfo.Attributes;
 
                 bool isReparsePoint = InternalSymbolicLinkLinkCodeMethods.IsReparsePoint(fileSystemInfo);
-                bool isLink = isReparsePoint || (excludeHardLink ? false : InternalSymbolicLinkLinkCodeMethods.IsHardLink(fileSystemInfo));
+                bool isLink = isReparsePoint || (!excludeHardLink && InternalSymbolicLinkLinkCodeMethods.IsHardLink(fileSystemInfo));
                 if (!isLink)
                 {
                     // special casing for the common cases - no allocations
@@ -6663,7 +6664,14 @@ namespace Microsoft.PowerShell.Commands
 
             try
             {
-                if (Directory.Exists(path))
+                // Get-Content will write a non-terminating error if the target is a directory.
+                // On Windows, the streamName must be null or empty for it to write the error. Otherwise, the
+                // alternate data stream is not a directory, even if it's set on a directory.
+                if (Directory.Exists(path)
+#if !UNIX
+                    && string.IsNullOrEmpty(streamName)
+#endif
+                    )
                 {
                     string errMsg = StringUtil.Format(SessionStateStrings.GetContainerContentException, path);
                     ErrorRecord error = new ErrorRecord(new InvalidOperationException(errMsg), "GetContainerContentException", ErrorCategory.InvalidOperation, null);
@@ -6818,7 +6826,14 @@ namespace Microsoft.PowerShell.Commands
 
             try
             {
-                if (Directory.Exists(path))
+                // Add-Content and Set-Content will write a non-terminating error if the target is a directory.
+                // On Windows, the streamName must be null or empty for it to write the error. Otherwise, the
+                // alternate data stream is not a directory, even if it's set on a directory.
+                if (Directory.Exists(path)
+#if !UNIX
+                    && string.IsNullOrEmpty(streamName)
+#endif
+                    )
                 {
                     string errMsg = StringUtil.Format(SessionStateStrings.WriteContainerContentException, path);
                     ErrorRecord error = new ErrorRecord(new InvalidOperationException(errMsg), "WriteContainerContentException", ErrorCategory.InvalidOperation, null);
@@ -6896,13 +6911,6 @@ namespace Microsoft.PowerShell.Commands
 
             path = NormalizePath(path);
 
-            if (Directory.Exists(path))
-            {
-                string errorMsg = StringUtil.Format(SessionStateStrings.ClearDirectoryContent, path);
-                WriteError(new ErrorRecord(new NotSupportedException(errorMsg), "ClearDirectoryContent", ErrorCategory.InvalidOperation, path));
-                return;
-            }
-
             try
             {
 #if !UNIX
@@ -6954,6 +6962,26 @@ namespace Microsoft.PowerShell.Commands
                     clearStream = false;
                 }
 
+#endif
+                // On Windows, determine if our argument is a directory only after we determine if
+                // we're being asked to work with an alternate data stream, because directories can have
+                // alternate data streams on them that are not child items. These alternate data streams
+                // must be treated as data streams, even if they're attached to directories. However,
+                // if asked to work with a directory without a data stream specified, write a non-terminating
+                // error instead of clearing all child items of the directory. (On non-Windows, alternate
+                // data streams don't exist, so in that environment always write the error when addressing
+                // a directory.)
+                if (Directory.Exists(path)
+#if !UNIX
+                    && !clearStream
+#endif
+                    )
+                {
+                    string errorMsg = StringUtil.Format(SessionStateStrings.ClearDirectoryContent, path);
+                    WriteError(new ErrorRecord(new NotSupportedException(errorMsg), "ClearDirectoryContent", ErrorCategory.InvalidOperation, path));
+                    return;
+                }
+#if !UNIX
                 if (clearStream)
                 {
                     FileStream fileStream = null;
@@ -7837,8 +7865,6 @@ namespace Microsoft.PowerShell.Commands
         // data is 16KB, plus there's a header.
         private const int MAX_REPARSE_SIZE = (16 * 1024) + REPARSE_GUID_DATA_BUFFER_HEADER_SIZE;
 
-        private const int ERROR_NOT_A_REPARSE_POINT = 4390;
-
         private const int FSCTL_GET_REPARSE_POINT = 0x000900A8;
 
         private const int FSCTL_SET_REPARSE_POINT = 0x000900A4;
@@ -8153,16 +8179,20 @@ namespace Microsoft.PowerShell.Commands
                     // Get Buffer size
                     IntPtr dangerousHandle = handle.DangerousGetHandle();
 
-                    bool result = DeviceIoControl(dangerousHandle, FSCTL_GET_REPARSE_POINT,
-                        IntPtr.Zero, 0, outBuffer, outBufferSize, out bytesReturned, IntPtr.Zero);
+                    bool result = DeviceIoControl(
+                        dangerousHandle,
+                        FSCTL_GET_REPARSE_POINT,
+                        InBuffer: IntPtr.Zero,
+                        nInBufferSize: 0,
+                        outBuffer,
+                        outBufferSize,
+                        out bytesReturned,
+                        lpOverlapped: IntPtr.Zero);
 
                     if (!result)
                     {
-                        int lastError = Marshal.GetLastWin32Error();
-                        if (lastError == ERROR_NOT_A_REPARSE_POINT)
-                            linkType = null;
-                        else
-                            throw new Win32Exception(lastError);
+                        // It's not a reparse point or the file system doesn't support reparse points.
+                        return IsHardLink(ref dangerousHandle) ? "HardLink" : null;
                     }
 
                     REPARSE_DATA_BUFFER_SYMBOLICLINK reparseDataBuffer = Marshal.PtrToStructure<REPARSE_DATA_BUFFER_SYMBOLICLINK>(outBuffer);
@@ -8182,7 +8212,7 @@ namespace Microsoft.PowerShell.Commands
                             break;
 
                         default:
-                            linkType = IsHardLink(ref dangerousHandle) ? "HardLink" : null;
+                            linkType = null;
                             break;
                     }
 
@@ -8399,16 +8429,20 @@ namespace Microsoft.PowerShell.Commands
                 // According to MSDN guidance DangerousAddRef() and DangerousRelease() have been used.
                 handle.DangerousAddRef(ref success);
 
-                bool result = DeviceIoControl(handle.DangerousGetHandle(), FSCTL_GET_REPARSE_POINT,
-                    IntPtr.Zero, 0, outBuffer, outBufferSize, out bytesReturned, IntPtr.Zero);
+                bool result = DeviceIoControl(
+                    handle.DangerousGetHandle(),
+                    FSCTL_GET_REPARSE_POINT,
+                    InBuffer: IntPtr.Zero,
+                    nInBufferSize: 0,
+                    outBuffer,
+                    outBufferSize,
+                    out bytesReturned,
+                    lpOverlapped: IntPtr.Zero);
 
                 if (!result)
                 {
-                    int lastError = Marshal.GetLastWin32Error();
-                    if (lastError == ERROR_NOT_A_REPARSE_POINT)
-                        return null;
-
-                    throw new Win32Exception(lastError);
+                    // It's not a reparse point or the file system doesn't support reparse points.
+                    return null;
                 }
 
                 string targetDir = null;
@@ -8619,7 +8653,22 @@ namespace System.Management.Automation.Internal
             SafeFindHandle handle = NativeMethods.FindFirstStreamW(
                 path, NativeMethods.StreamInfoLevels.FindStreamInfoStandard,
                 findStreamData, 0);
-            if (handle.IsInvalid) throw new Win32Exception();
+
+            if (handle.IsInvalid)
+            {
+                int error = Marshal.GetLastWin32Error();
+
+                // Directories don't normally have alternate streams, so this is not an exceptional state.
+                // If a directory has no alternate data streams, FindFirstStreamW returns ERROR_HANDLE_EOF.
+                if (error == NativeMethods.ERROR_HANDLE_EOF)
+                {
+                    return alternateStreams;
+                }
+
+                // An unexpected error was returned, that we don't know how to interpret. The most helpful
+                // thing we can do at this point is simply throw the raw Win32 exception.
+                throw new Win32Exception(error);
+            }
 
             try
             {
@@ -8754,6 +8803,7 @@ namespace System.Management.Automation.Internal
         internal static class NativeMethods
         {
             internal const int ERROR_HANDLE_EOF = 38;
+            internal const int ERROR_INVALID_PARAMETER = 87;
 
             internal enum StreamInfoLevels { FindStreamInfoStandard = 0 }
 

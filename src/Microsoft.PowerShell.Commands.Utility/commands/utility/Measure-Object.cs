@@ -18,7 +18,7 @@ namespace Microsoft.PowerShell.Commands
         /// <summary>
         /// Property name.
         /// </summary>
-        public string Property { get; set; } = null;
+        public string Property { get; set; }
     }
 
     /// <summary>
@@ -244,7 +244,7 @@ namespace Microsoft.PowerShell.Commands
         /// <value></value>
         [ValidateNotNullOrEmpty]
         [Parameter(Position = 0)]
-        public PSPropertyExpression[] Property { get; set; } = null;
+        public PSPropertyExpression[] Property { get; set; }
 
         #endregion Common parameters in both sets
 
@@ -623,7 +623,6 @@ namespace Microsoft.PowerShell.Commands
         {
             object currentValue = objValue;
             object statValue = statMinOrMaxValue;
-            int factor = isMin ? 1 : -1;
 
             double temp;
             currentValue = ((objValue != null) && LanguagePrimitives.TryConvertTo<double>(objValue, out temp)) ? temp : currentValue;
@@ -635,13 +634,15 @@ namespace Microsoft.PowerShell.Commands
                 statValue = PSObject.AsPSObject(statValue).ToString();
             }
 
-            if ((statValue == null) ||
-                ((LanguagePrimitives.Compare(statValue, currentValue, false, CultureInfo.CurrentCulture) * factor) > 0))
+            if (statValue == null)
             {
                 return objValue;
             }
 
-            return statMinOrMaxValue;
+            int comparisonResult = LanguagePrimitives.Compare(statValue, currentValue, ignoreCase: false, CultureInfo.CurrentCulture);
+            return (isMin ? comparisonResult : -comparisonResult) > 0
+                ? objValue
+                : statMinOrMaxValue;
         }
 
         /// <summary>
